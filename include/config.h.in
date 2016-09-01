@@ -1,0 +1,72 @@
+#ifndef HAVE_CONFIG_H_
+#define HAVE_CONFIG_H_
+
+#cmakedefine DISABLE_THREADING
+
+#define MODEL_HEADER_NAME "${MODEL_PREFIX}_namespaceinit_generated.h"
+#define MODEL_INITIALIZER_FUNCTION(_p_server) ${MODEL_PREFIX}_namespaceinit_generated(_p_server)
+
+/* Tick interval for the IPC Manager class */
+#define IPC_MANAGER_TICKINTERVAL           10*1000000 //ns
+
+/* Tick interval for state machines */
+#define TIMETICK_INTERVAL                  100 //ms
+
+/* Port for our Server to liste on */
+#define UA_SERVER_PORT                     16664
+
+/* Beacon group port and interval */
+#define UDP_BEACON_INTERVAL                1   //s
+#define UDP_BEACON_PORT                    16664
+
+/* Definitions of Sub-Type node IDs */
+#define IMMODULE_NSID 2
+#define MODULE_TYPE_HMI_ID                 5103
+#define MODULE_TYPE_PHYSICALPORTS_ID       5104
+#define MODULE_TYPE_SERVICELIST_ID         5105
+#define MODULE_TYPE_SIGNALIST_ID           5106
+#define SERVICE_TYPE_CURRENTSTATE_ID       6023
+#define SERVICE_TYPE_LASTTRANSITION_ID     6024
+#define SERVICE_TYPE_DURATION_ID           6101
+#define SERVICE_TYPE_STATESFOLDER_ID       5024
+#define SERVICE_TYPE_SERVICEMODEL_ID       6025
+#define SERVICE_TYPE_TRANSITIONSFOLDER_ID  5025
+#define SERVICE_TYPE_COMMANDSFOLDER_ID     5026
+#define SERVICE_TYPE_PARAMETERLIST_ID      5023
+#define SERVICE_TYPE_TICKCOUNT_ID         6102
+
+#define COMMANDSET_61512_ABORT             7009
+#define COMMANDSET_61512_HOLD              7010
+#define COMMANDSET_61512_PAUSE             7011
+#define COMMANDSET_61512_RESET             7012
+#define COMMANDSET_61512_RESUME            7013
+#define COMMANDSET_61512_START             7014
+#define COMMANDSET_61512_STOP              7015
+#define COMMANDSET_61512_UNHOLD            7016
+
+#define COMMANDSET_PACKML_ABORT            7017
+#define COMMANDSET_PACKML_CLEAR            7018
+#define COMMANDSET_PACKML_HOLD             7019
+#define COMMANDSET_PACKML_RESET            7020
+#define COMMANDSET_PACKML_START            7021
+#define COMMANDSET_PACKML_STOP             7022
+#define COMMANDSET_PACKML_SUSPEND          7023
+#define COMMANDSET_PACKML_UNHOLD           7024
+#define COMMANDSET_PACKML_UNSUSPEND        7025
+
+// Model uses bootstrapping: Force it to use internal headers to find the necessary types
+// by pretending we never amalgamated (installer puts the headers into the right place for us)
+extern "C" {
+#ifndef UA_NO_AMALGAMATION
+#warning "Forcing UA_NO_AMALGAMATION on header file..."
+#define UA_NO_AMALGAMATION
+  #include MODEL_HEADER_NAME
+#undef UA_NO_AMALGAMATION
+#else
+  #include MODEL_HEADER_NAME
+#endif
+}
+
+#include "logger.h"
+
+#endif
