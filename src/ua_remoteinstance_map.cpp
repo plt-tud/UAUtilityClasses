@@ -28,12 +28,11 @@
 
 
 extern "C" {
-#include <unistd.h>
-#include "ua_config_standard.h"
+  #include <unistd.h>
+  #include "open62541/open62541.h"
 }
 
 #include "logger.h"
-#include "ua_flatmimi_target.h"
 #include "ua_proxies_typeconversion.h"
 
 ua_remoteInstance_map::ua_remoteInstance_map(std::string targetUri) 

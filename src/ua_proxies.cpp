@@ -28,7 +28,7 @@
 
 extern "C" 
 {
-  #include "ua_server.h"
+  #include "open62541/open62541.h"
 }
 
 #include "ua_proxies.h"

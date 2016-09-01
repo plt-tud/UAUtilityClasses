@@ -29,6 +29,7 @@
 #include <thread>
 #include <errno.h>
 #include <fcntl.h>
+#include <string.h>
 
 udp_beacon::udp_beacon(uint16_t port, uint16_t ua_server_port, beacon_config config)
 {

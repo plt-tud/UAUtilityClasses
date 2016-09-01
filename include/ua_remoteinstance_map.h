@@ -28,8 +28,7 @@
 #define UA_REMOTEINSTANCE_MAP_H
 
 extern "C" {
-    #include "ua_client.h"
-    #include "ua_types.h"
+  #include "open62541/open62541.h"
 }
 
 #include <string>
