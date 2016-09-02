@@ -21,8 +21,9 @@ from ua_namespace import *
 import logging
 import argparse
 from XMLPreprocessor import XMLPreprocessor
-from cppClass_generator import cppClass_generator
+from cppClass_generator import cppClass_generator, serverHostClassConfig, clientHostClassConfig
 import toolBox_generator
+from xml.dom import minidom
 
 logger = logging.getLogger(__name__)
 
@@ -59,14 +60,14 @@ parser.add_argument('-s','--suppress',
                     choices=['description', 'browseName', 'displayName', 'writeMask', 'userWriteMask','nodeid'],
                     default=[],
                     help="Suppresses the generation of some node attributes. Currently supported options are 'description', 'browseName', 'displayName', 'writeMask', 'userWriteMask' and 'nodeid'.")
-parser.add_argument('-l','--serverlist',
-                    metavar="<serverlist>",
+parser.add_argument('-a','--classannotations',
+                    metavar="<classannotations>",
                     type=argparse.FileType('r'),
                     #action='append',
-                    dest="serverlist",
-                    default=[],
-                    help="Server to init root Node")
-parser.add_argument('-ns','--generatedNamspaceFileName',
+                    dest="classannotations",
+                    default=None,
+                    help="Class annotation XML containing Server/Client classes, special config data, etc.")
+parser.add_argument('-n','--generatedNamspaceFileName',
                     metavar="<generatedNamspaceFileName>",
                     #action='append',
                     dest="generatedNamspaceFileName",
@@ -75,7 +76,6 @@ parser.add_argument('-ns','--generatedNamspaceFileName',
 
 
 parser.add_argument('-v','--verbose', action='count', help='Make the script more verbose. Can be applied up to 4 times')
-
 
 args = parser.parse_args()
 
@@ -95,8 +95,6 @@ elif (verbosity>=4):
 logging.basicConfig(level=level)
 logger.setLevel(logging.DEBUG)
 
-
-
 # Creating the header is tendious. We can skip the entire process if
 # the header exists.
 #if path.exists(argv[-1]+".c") or path.exists(argv[-1]+".h"):
@@ -104,20 +102,30 @@ logger.setLevel(logging.DEBUG)
 #  log(None, "Header generation will be skipped. Delete the header and rerun this script if necessary.", LOG_LEVEL_INFO)
 #  exit(0)
 
-# Open the output file
-#outfileh = open(args.outputFile+".h", r"w+")
-#outfilec = open(args.outputFile+".c", r"w+")
 # Create a new namespace. Note that the namespace name is not significant.
-ns = opcua_namespace("cppGen")
+# Get the name of the namespace (to include in headers)
+generateNamespaceModelFileName = "myGeneratedNamespaceHeader"
+if 'generatedNamspaceFileName' in args._get_kwargs():
+  generateNamespaceModelFileName = args._get_kwargs()['generatedNamspaceFileName']
+ns = opcua_namespace(generateNamespaceModelFileName)
 
 ## Einlesen der zusätzlichen ServerList XML Datei
-from xml.dom import minidom
-xmldoc = minidom.parse(args.serverlist)
-serverClass = xmldoc.getElementsByTagName('serverClass')
-serverList = xmldoc.getElementsByTagName('name')
-
-
-
+# TODO: Provide additional config class/mechanism for more elaborate annotations (subscription intervals, ...)
+serverHostList = []
+clientHostList = []
+print(args._get_kwargs())
+if args.classannotations != None:
+  logger.info("Have class annotations")
+  xmldoc = minidom.parse(args.classannotations)
+  allAnnotations = xmldoc.getElementsByTagName('classannotations')
+  if len(allAnnotations) > 0:
+    for annotation in allAnnotations[0].getElementsByTagName('serverClass'):
+      config = serverHostClassConfig(annotation.attributes['classname'].value)
+      serverHostList.append(config)
+    for annotation in allAnnotations[0].getElementsByTagName('clientClass'):
+      config = serverHostClassConfig(annotation.attributes['classname'].value)
+      serverHostList.append(config)
+  
 # Clean up the XML files by removing duplicate namespaces and unwanted prefixes
 preProc = XMLPreprocessor()
 for xmlfile in args.infiles:
@@ -189,7 +197,7 @@ for ignore in args.ignoreFiles:
       ignoreNodes.append(ns.getNodeByIDString(id))
   ignore.close()
 
-cppgen = cppClass_generator(ns, serverList, args.generatedNamspaceFileName)
+cppgen = cppClass_generator(ns, serverHostList, generateNamespaceModelFileName)
 
 cppgen.addIgnoredNodes(ignoreNodes)
 cppgen.generateAll(args.outputFile)

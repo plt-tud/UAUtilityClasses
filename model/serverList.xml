@@ -3,3 +3,18 @@
 	<name>mtcaModule</name>
 	<name>ModuleType</name>
 </serverClass>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<classannotations>
+  <serverClass classname="mtcaModule">
+    <!-- Future concept: Allow configuration of generation parameters like so: 
+    -->
+    <publishingIntervalLimitMin>10.0</publishingIntervalLimitMin>
+    <publishingIntervalLimitMax>3600.0 * 1000.0</publishingIntervalLimitMax>
+    <samplingIntervalLimitMin>10.0</samplingIntervalLimitMin>
+    <samplingIntervalLimitMax>3600.0 * 1000.0</samplingIntervalLimitMax>
+    <!-- But right now only the classname is evaluated -->
+  </serverClass>
+  <serverClass classname="ModuleType" />
+  <clientClass classname="magicClientXY" />
+</classannotations>

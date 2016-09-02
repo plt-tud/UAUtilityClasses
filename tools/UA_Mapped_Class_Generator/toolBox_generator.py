@@ -28,80 +28,78 @@ def getNodeCodeName(objectNode):
     return name
 
 def getCPPTypeByUAType(ua_typestring):
-	print("VariablenTyp: " + ua_typestring)
-	
-	if ua_typestring.lower() == "string":
-		return "std::string"
-	elif ua_typestring.lower() in ["double", "float"]:
-		return ua_typestring.lower()
-	elif ua_typestring.lower() in ["int16", "uint16","int32", "uint32","int64", "uint64"]:
-		return ua_typestring.lower() + "_t"
-	elif ua_typestring.lower() == "nodeid":
-		return "UA_NodeId"
-	# Should be proved
-	elif ua_typestring.lower() == "datetime":
-		return "time_t"
-		
-	# TODO: bool
-	# FIXME: Lots of missing types here...
-	else:
-		return "NonMappableType_UAType_" + ua_typestring; 
-		
+  if ua_typestring.lower() == "string":
+    return "std::string"
+  elif ua_typestring.lower() in ["double", "float"]:
+    return ua_typestring.lower()
+  elif ua_typestring.lower() in ["int16", "uint16","int32", "uint32","int64", "uint64"]:
+    return ua_typestring.lower() + "_t"
+  elif ua_typestring.lower() == "nodeid":
+    return "UA_NodeId"
+  elif ua_typestring.lower() in ["bool", "boolean"]:
+    return "bool"
+  elif ua_typestring.lower() in ["byte"]:
+    return "uint8_t"
+  elif ua_typestring.lower() in ["sbyte"]:
+    return "int8_t"
+  elif ua_typestring.lower() == "datetime":
+    return "time_t"
+  # FIXME: Lots of missing types here...
+  else:
+    return "NonMappableType_UAType_" + ua_typestring; 
+    
 def getProxyTypeByUAType(ua_typestring):
-	print("VariablenTyp: " + ua_typestring)
-	
-	if ua_typestring.lower() == "string":
-		return "STRING"
-	elif ua_typestring.lower() in ["double", "float"]:
-		return ua_typestring.upper()
-	elif ua_typestring.lower() in ["int16", "uint16","int32", "uint32","int64", "uint64"]:
-		return ua_typestring.upper()
-	elif ua_typestring.lower() == "datetime":
-		return "DATETIME"
-	elif ua_typestring.lower() == "bool":
-		return "BOOL"
-	
-	# FIXME: Lots of missing types here...
-	else:
-		return "NonMappableType_UAType_" + ua_typestring; 
+  if ua_typestring.lower() == "string":
+    return "STRING"
+  elif ua_typestring.lower() in ["double", "float"]:
+    return ua_typestring.upper()
+  elif ua_typestring.lower() in ["int16", "uint16","int32", "uint32","int64", "uint64", "byte", "sbyte"]:
+    return ua_typestring.upper()
+  elif ua_typestring.lower() == "datetime":
+    return "DATETIME"
+  elif ua_typestring.lower() in ["bool", "boolean"]:
+    return "BOOLEAN"
+  # FIXME: Lots of missing types here...
+  else:
+    return "NonMappableType_UAType_" + ua_typestring; 
         
 # From "open62541_MacroHelper.py" littlebit changed
 # now returns a single String with name of the DefineString
 def getNodeIdDefineString(objectNode):
-	
-	extrNs = objectNode.browseName().split(":")
-	symbolic_name = ""
-	# strip all characters that would be illegal in C-Code
-	if len(extrNs) > 1:
-		nodename = extrNs[1]
-	else:
-		nodename = extrNs[0]
-	
-	symbolic_name = substitutePunctuationCharacters(nodename)
-	if symbolic_name != nodename :
-		log(self, "Subsituted characters in browsename for nodeid " + str(objectNode.id().i) + " while generating C-Code ", LOG_LEVEL_WARN)
-			
-	return "UA_NS"  + str(objectNode.id().ns) + "ID_" + symbolic_name.upper()
-	
-	
+  
+  extrNs = objectNode.browseName().split(":")
+  symbolic_name = ""
+  # strip all characters that would be illegal in C-Code
+  if len(extrNs) > 1:
+    nodename = extrNs[1]
+  else:
+    nodename = extrNs[0]
+  
+  symbolic_name = substitutePunctuationCharacters(nodename)
+  if symbolic_name != nodename :
+    log(self, "Subsituted characters in browsename for nodeid " + str(objectNode.id().i) + " while generating C-Code ", LOG_LEVEL_WARN)
+      
+  return "UA_NS"  + str(objectNode.id().ns) + "ID_" + symbolic_name.upper()
+  
+  
 # From "open62541_MacroHelper.py" just copy&paste it
 def substitutePunctuationCharacters(input):
-	''' 
-		substitutePunctuationCharacters
-	
-		Replace punctuation characters in input. Part of this class because it is used by
-		ua_namespace on occasion.
-		returns: C-printable string representation of input
-	'''
-	# No punctuation characters <>!$
-	illegal_chars = list(string.punctuation)
-	# underscore is allowed
-	illegal_chars.remove('_')
+  ''' 
+    substitutePunctuationCharacters
+  
+    Replace punctuation characters in input. Part of this class because it is used by
+    ua_namespace on occasion.
+    returns: C-printable string representation of input
+  '''
+  # No punctuation characters <>!$
+  illegal_chars = list(string.punctuation)
+  # underscore is allowed
+  illegal_chars.remove('_')
 
-	illegal = "".join(illegal_chars)
-	substitution = ""
-	# Map all punctuation characters to underscore
-	for illegal_char in illegal_chars:
-		substitution = substitution + '_'
+  illegal = "".join(illegal_chars)
+  substitution = ""
+  # Map all punctuation characters to underscore
+  for illegal_char in illegal_chars:
+    substitution = substitution + '_'
 
-	return input.translate(string.maketrans(illegal, substitution), illegal)
+  return input.translate(string.maketrans(illegal, substitution), illegal)

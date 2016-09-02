@@ -44,124 +44,109 @@ defined_typealiases = []
 INDENT="    "
         
 class headerfile_generator:
-	
-	namespace = None # OPCUA namespace to be printed
-	serverList = None
-	
-	#header = None
-	#objectNode = None
-	#methods = None
-	#variables = None
-	#objects = None
-	
-	def __init__(self, serverList, namespace):
-		self.namespace = namespace
-		self.serverList = serverList
-		self.ignoredNodes = []
-		#self.header = header
-		#self.objectNode = objectNode
-		#self.methods = methods
-		#self.variables = variables
-		#self.objects = objects
-
-       
-       
-	def generateHeaderFile(self, header, objectNode, methodList, variableList, objectList):
-		classname = toolBox_generator.getNodeCodeName(objectNode);
-		
-		isServerClass = False;
-		## Check kind of class
-		## normal class oder root class     
-		for server in self.serverList:
-			if server.firstChild.nodeValue == classname:
-				isServerClass = True;
-				
-		# Print Header Guards
-		header.write("#ifndef HAVE_" + classname.capitalize() + "_H\n")
-		header.write("#define HAVE_" + classname.capitalize() + "_H\n\n")
+  
+  namespace = None # OPCUA namespace to be printed
+  serverList = None
+  
+  #header = None
+  #objectNode = None
+  #methods = None
+  #variables = None
+  #objects = None
+  
+  def __init__(self, namespace, serverList=None):
+    self.namespace = namespace
+    self.serverList = serverList
+    self.ignoredNodes = []
+    #self.header = header
+    #self.objectNode = objectNode
+    #self.methods = methods
+    #self.variables = variables
+    #self.objects = objects
+  
+  def isServerClass(self, classname):
+    for serverConfig in self.serverList:
+      if serverConfig.name == classname:
+        return True;
+    return False;
+  
+  def generateHeaderFile(self, header, objectNode, methodList, variableList, objectList):
+    classname = toolBox_generator.getNodeCodeName(objectNode);
         
+    # Print Header Guards
+    header.write("#ifndef HAVE_" + classname.capitalize() + "_H\n")
+    header.write("#define HAVE_" + classname.capitalize() + "_H\n\n")
         
-		if	isServerClass:
-			header.write("#include <ipc_managed_object.h>\n")
-			
-		header.write("#include \"ua_mapped_class.h\"\n\n")
-		
-		
-		if	isServerClass:
-			header.write("class " + classname + " : public ipc_managed_object, ua_mapped_class {\n")
-		else:
-			header.write("class " + classname + " : ua_mapped_class {\n")
-	
-		header.write("private:\n")
-				
-		if	isServerClass:
-			self.generateHeaderServerVariables(header, variableList)
-			for vn in variableList:
-				header.write(INDENT + toolBox_generator.getCPPTypeByUAType(str(vn.dataType().target().browseName())) + " " + toolBox_generator.getNodeCodeName(vn) + ";\n")
-			self.generateHeaderServerMethoden(header)
-			print("generate server header file")
-		else:
-			for vn in variableList:
-				header.write(INDENT + toolBox_generator.getCPPTypeByUAType(str(vn.dataType().target().browseName())) + " " + toolBox_generator.getNodeCodeName(vn) + ";\n")
-			print("generate standard header file")
-		
-		'''
-		' Do we need this kind of object?! You should think about...
-		'
-		'''
-		'''#objectList
-		' for on in objectList:
-		'	header.write(INDENT + "//FIXME " + toolBox_generator.getCPPTypeByUAType(str(on.id())) + " " + toolBox_generator.getNodeCodeName(on) + ";\n")
-		'''
-		
-		header.write("\n")
-		for on in objectList:
-			header.write(INDENT + "UA_NodeId " + toolBox_generator.getNodeCodeName(on) + ";\n")
-		header.write("\n")
-		header.write(INDENT + "UA_StatusCode mapSelfToNamespace();\n")
-		header.write("\n")
-		header.write("protected:\n")
-		header.write("\n")
-		header.write("public:\n")
-		
-		if	isServerClass:
-			header.write(INDENT + classname + "(std::string moduleName, uint16_t opcuaPort);\n")
-			header.write(INDENT + "~" + classname + "();\n")
-			header.write(INDENT + "void workerThread();\n")
-		else:
-			header.write(INDENT + classname + "(UA_NodeId baseNodeId, UA_Server* server);\n")
-			header.write(INDENT + "~" + classname + "();\n")
-			header.write("\n")
-			header.write(INDENT + "// Getter and Setter functions \n")
-			for vn in variableList:
-				header.write(INDENT + toolBox_generator.getCPPTypeByUAType(str(vn.dataType().target().browseName())) + " get_" + toolBox_generator.getNodeCodeName(vn) + "();\n")
-				header.write(INDENT + "void set_" + toolBox_generator.getNodeCodeName(vn) + "("+ toolBox_generator.getCPPTypeByUAType(str(vn.dataType().target().browseName()))+" value);\n")
-				header.write("\n")
-		
-		self.generateHeaderMethods(header, methodList)
-		
-		header.write("\n")
-		header.write("};\n")
-		header.write("\n#endif // Header guard\n")
-		
-	def generateHeaderMethods(self, header, methodList):     
-		# Method header   
-		for mn in methodList:
-			header.write("UA_StatusCode " + toolBox_generator.getNodeCodeName(mn) + "(size_t inputSize, const UA_Variant *input, size_t outputSize, UA_Variant *output);\n") 
-		
-	def generateHeaderServerVariables(self, header, variableList):
-		
-		#header.write(INDENT + "std::string name;\n\n")
-		#header.write(INDENT + "UA_NodeId rootNodeId;\n")
-		#header.write(INDENT + "UA_NodeId HMIId;\n")
-		#header.write(INDENT + "UA_NodeId PhysicalPortsListId;\n")
-		#header.write(INDENT + "UA_NodeId ServiceListId;\n")
-		#header.write(INDENT + "UA_NodeId SignalListId;\n\n")
-		
-		header.write(INDENT + "UA_ServerConfig server_config;\n")
-		header.write(INDENT + "UA_ServerNetworkLayer server_nl;\n")
-		#header.write(INDENT + "UA_Logger logger;\n")
-		#header.write(INDENT + "UA_NodeId simulatorsNodeId;\n\n")
-		
-	def generateHeaderServerMethoden(self, header):
-		header.write(INDENT + "void constructserver(uint16_t opcuaPort);\n")
+    if self.isServerClass(classname):
+      header.write("#include <ipc_managed_object.h>\n")
+      
+    header.write("#include \"ua_mapped_class.h\"\n\n")
+    
+    if self.isServerClass(classname):
+      header.write("class " + classname + " : public ipc_managed_object, ua_mapped_class {\n")
+    else:
+      header.write("class " + classname + " : ua_mapped_class {\n")
+  
+    header.write("private:\n")
+        
+    if self.isServerClass(classname):
+      self.generateHeaderServerVariables(header, variableList)
+      for vn in variableList:
+        header.write(INDENT + toolBox_generator.getCPPTypeByUAType(str(vn.dataType().target().browseName())) + " " + toolBox_generator.getNodeCodeName(vn) + ";\n")
+      self.generateHeaderServerMethoden(header)
+      print("generate server header file")
+    else:
+      for vn in variableList:
+        header.write(INDENT + toolBox_generator.getCPPTypeByUAType(str(vn.dataType().target().browseName())) + " " + toolBox_generator.getNodeCodeName(vn) + ";\n")
+      print("generate standard header file")
+    
+    '''
+    ' Do we need this kind of object?! You should think about...
+    '
+    '''
+    '''#objectList
+    ' for on in objectList:
+    '  header.write(INDENT + "//FIXME " + toolBox_generator.getCPPTypeByUAType(str(on.id())) + " " + toolBox_generator.getNodeCodeName(on) + ";\n")
+    '''
+    
+    header.write("\n")
+    for on in objectList:
+      header.write(INDENT + "UA_NodeId " + toolBox_generator.getNodeCodeName(on) + ";\n")
+    header.write("\n")
+    header.write(INDENT + "UA_StatusCode mapSelfToNamespace();\n")
+    header.write("\n")
+    header.write("protected:\n")
+    header.write("\n")
+    header.write("public:\n")
+    
+    if self.isServerClass(classname):
+      header.write(INDENT + classname + "(std::string moduleName, uint16_t opcuaPort);\n")
+      header.write(INDENT + "~" + classname + "();\n")
+      header.write(INDENT + "void workerThread();\n")
+    else:
+      header.write(INDENT + classname + "(UA_NodeId baseNodeId, UA_Server* server);\n")
+      header.write(INDENT + "~" + classname + "();\n")
+      header.write("\n")
+      header.write(INDENT + "// Getter and Setter functions \n")
+      for vn in variableList:
+        header.write(INDENT + toolBox_generator.getCPPTypeByUAType(str(vn.dataType().target().browseName())) + " get_" + toolBox_generator.getNodeCodeName(vn) + "();\n")
+        header.write(INDENT + "void set_" + toolBox_generator.getNodeCodeName(vn) + "("+ toolBox_generator.getCPPTypeByUAType(str(vn.dataType().target().browseName()))+" value);\n")
+        header.write("\n")
+    
+    self.generateHeaderMethods(header, methodList)
+    
+    header.write("\n")
+    header.write("};\n")
+    header.write("\n#endif // Header guard\n")
+    
+  def generateHeaderMethods(self, header, methodList):     
+    # Method header   
+    for mn in methodList:
+      header.write("UA_StatusCode " + toolBox_generator.getNodeCodeName(mn) + "(size_t inputSize, const UA_Variant *input, size_t outputSize, UA_Variant *output);\n") 
+    
+  def generateHeaderServerVariables(self, header, variableList):
+    header.write(INDENT + "UA_ServerConfig server_config;\n")
+    header.write(INDENT + "UA_ServerNetworkLayer server_nl;\n")
+    
+  def generateHeaderServerMethoden(self, header):
+    header.write(INDENT + "void constructserver(uint16_t opcuaPort);\n")

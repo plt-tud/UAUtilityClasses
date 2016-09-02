@@ -33,73 +33,86 @@ __unique_item_id = 0
 defined_typealiases = []
 
 INDENT="    "
-	
-class cppClass_generator():
-	namespace = None # OPCUA namespace to be printed
-	serverList = None
-	generatedNamspaceFileName = None
-	
+  
+class serverHostClassConfig():
+  name = ""
+  
+  def __init__(self, name):
+    self.name = name
+
+class clientHostClassConfig():
+  name = ""
+  
+  def __init__(self, name):
+    self.name = name
     
-	def __init__(self, namespace, serverList, generatedNamspaceFileName):
-		self.namespace = namespace
-		self.serverList = serverList
-		self.generatedNamspaceFileName = generatedNamspaceFileName
-		self.ignoredNodes = []
-		
-		self.namespace.linkOpenPointers
+class cppClass_generator():
+  namespace = None # OPCUA namespace to be printed
+  serverHostList = None
+  generatedNamspaceFileName = None
+  
+    
+  def __init__(self, namespace, serverHostList, generatedNamspaceFileName):
+    self.namespace = namespace
+    self.serverHostList = serverHostList
+    self.generatedNamspaceFileName = generatedNamspaceFileName
+    self.ignoredNodes = []
+    
+    self.namespace.linkOpenPointers
   
    
-	def addIgnoredNodes(self, ignoredNodesList):
-		self.ignoredNodes += ignoredNodesList		
-		
-	def generateObject(self, objectNode, targetfiles):
-		(header, implementation) = targetfiles
-		classname = toolBox_generator.getNodeCodeName(objectNode)
-		logger.debug("Generating ObjectType " + str(objectNode.id()) + " " + classname)
-		print("Generating ObjectType " + str(objectNode.id()) + " " + classname)
-		methods=[]
-		variables=[]
-		objects=[]
-		
-		for r in objectNode.getReferences():
-			if r.isForward() and r.target() != None:
-				if((r.target().nodeClass() == NODE_CLASS_VARIABLE or  r.target().nodeClass() == NODE_CLASS_VARIABLETYPE)):
-					vn = r.target()
-					if (vn.dataType() != None):
-						variables.append(vn)
-				if (r.target().nodeClass() == NODE_CLASS_OBJECT):
-					print("+-Object" + toolBox_generator.getNodeCodeName(r.target()))
-					objects.append(r.target())
-				if(r.target().nodeClass() == NODE_CLASS_METHOD):
-					print("+-Method" + toolBox_generator.getNodeCodeName(r.target()))
-					methods.append(r.target())
-		## create all files    
-		cppfile = cppfile_generator(self.serverList, self.generatedNamspaceFileName)
-		headerfile = headerfile_generator(self.serverList, self.namespace)
-		
-		cppfile.generateImplementationFile(implementation, objectNode, methods, variables, objects)
-		headerfile.generateHeaderFile(header, objectNode, methods, variables, objects)		
-		
-	def generateAll(self, outputPath):
-		for n in self.namespace.nodes:
-			if n.nodeClass() == NODE_CLASS_OBJECTTYPE and not n in self.ignoredNodes:
-				name = toolBox_generator.getNodeCodeName(n)
-				print(name+".cpp, "+name+".hpp")
-				cppPath = outputPath + "/cpp/"
-				hppPath = outputPath + "/hpp/"
-				if not os.path.exists(cppPath):
-					os.makedirs(cppPath)
-				if not os.path.exists(hppPath):
-					os.makedirs(hppPath)		
-					
-				#if os.path.isfile(cppPath + name + ".cpp"):
-				#	print("Datei " + cppPath + name + ".cpp existiert bereits")
-				codefile = open(cppPath + name + ".cpp", r"w+")
-					
-				#if os.path.isfile(hppPath + name + ".hpp"):
-				#	print("Datei " + hppPath + name + ".cpp existiert bereits")
-				headerfile = open(hppPath + name + ".hpp", r"w+")
-					
-				self.generateObject(n, (headerfile, codefile))
-				headerfile.close()
-				codefile.close()  
+  def addIgnoredNodes(self, ignoredNodesList):
+    self.ignoredNodes += ignoredNodesList    
+    
+  def generateObject(self, objectNode, targetfiles):
+    (header, implementation) = targetfiles
+    classname = toolBox_generator.getNodeCodeName(objectNode)
+    logger.debug("Generating ObjectType " + str(objectNode.id()) + " " + classname)
+    print("Generating ObjectType " + str(objectNode.id()) + " " + classname)
+    methods=[]
+    variables=[]
+    objects=[]
+    
+    for r in objectNode.getReferences():
+      if r.isForward() and r.target() != None:
+        if((r.target().nodeClass() == NODE_CLASS_VARIABLE or  r.target().nodeClass() == NODE_CLASS_VARIABLETYPE)):
+          vn = r.target()
+          if (vn.dataType() != None):
+            variables.append(vn)
+        if (r.target().nodeClass() == NODE_CLASS_OBJECT):
+          print("+-Object" + toolBox_generator.getNodeCodeName(r.target()))
+          objects.append(r.target())
+        if(r.target().nodeClass() == NODE_CLASS_METHOD):
+          print("+-Method" + toolBox_generator.getNodeCodeName(r.target()))
+          methods.append(r.target())
+    ## create all files
+    # 
+    cppfile = cppfile_generator(self.generatedNamspaceFileName, self.serverHostList)
+    headerfile = headerfile_generator(self.namespace, self.serverHostList)
+    
+    cppfile.generateImplementationFile(implementation, objectNode, methods, variables, objects)
+    headerfile.generateHeaderFile(header, objectNode, methods, variables, objects)    
+    
+  def generateAll(self, outputPath):
+    for n in self.namespace.nodes:
+      if n.nodeClass() == NODE_CLASS_OBJECTTYPE and not n in self.ignoredNodes:
+        name = toolBox_generator.getNodeCodeName(n)
+        print(name+".cpp, "+name+".hpp")
+        cppPath = outputPath + "/cpp/"
+        hppPath = outputPath + "/hpp/"
+        if not os.path.exists(cppPath):
+          os.makedirs(cppPath)
+        if not os.path.exists(hppPath):
+          os.makedirs(hppPath)    
+          
+        #if os.path.isfile(cppPath + name + ".cpp"):
+        #  print("Datei " + cppPath + name + ".cpp existiert bereits")
+        codefile = open(cppPath + name + ".cpp", r"w+")
+          
+        #if os.path.isfile(hppPath + name + ".hpp"):
+        #  print("Datei " + hppPath + name + ".cpp existiert bereits")
+        headerfile = open(hppPath + name + ".hpp", r"w+")
+          
+        self.generateObject(n, (headerfile, codefile))
+        headerfile.close()
+        codefile.close()  
