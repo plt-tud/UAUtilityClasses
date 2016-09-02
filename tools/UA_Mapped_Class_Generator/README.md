@@ -18,18 +18,15 @@ How to use:
 	The example define two server classes "mtcaModule" and "ModuleType".
 
 2. Lets start
-* python ./generate_cppClasses.py 
-* -> Main file
-* -i ../../model/NodeID_Blacklist_FullNS0.txt 
-* -b ../../model/NodeID_Blacklist.txt 
-* ../../model/Opc.Ua.NodeSet2.xml 
-* ../../model/moduleim.xml 
-* ../../build/src_generated/ 
-* -> Output directory
-* -l ../../model/serverList.xml 				
-* -> path to the server class definition
-* -ns mtpmodule_namespaceinit_generated			
-* -> file name of the output from namespaceCompiler
+| ----------------------------------------------|:-----------------------------------------------------:|
+| python ./generate_cppClasses.py       	| -> Main file |
+| -i ../../model/NodeID_Blacklist_FullNS0.txt  	|      | 
+| -b ../../model/NodeID_Blacklist.txt 		| are neat      |  
+| ../../model/Opc.Ua.NodeSet2.xml  		|	|
+| ../../model/moduleim.xml 			|	|
+| ../../build/src_generated/ 			| -> Output directory |
+| -l ../../model/serverList.xml 		| -> path to the server class definition |
+| -ns mtpmodule_namespaceinit_generated		| -> file name of the output from namespaceCompiler |
 
 
 
