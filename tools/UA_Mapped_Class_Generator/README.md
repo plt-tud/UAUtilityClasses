@@ -28,9 +28,9 @@ How to use:
 | -l ../../model/serverList.xml | -> path to the server class definition |
 | -ns mtpmodule_namespaceinit_generated | -> file name of the output from namespaceCompiler |
 
-Markdown | Less |
 |--- | --- |
 |`python ./generate_cppClasses.py` | `-> Main file` |
+| -i ../../model/NodeID_Blacklist_FullNS0.txt | d | 
 |1 | 2 |
 
 
