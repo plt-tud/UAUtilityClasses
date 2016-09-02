@@ -71,7 +71,7 @@ parser.add_argument('-n','--generatedNamspaceFileName',
                     metavar="<generatedNamspaceFileName>",
                     #action='append',
                     dest="generatedNamspaceFileName",
-                    #default=[],
+                    default="myUnspecifiedGeneratedNamespaceHeader",
                     help="Name of the generated NameSpaceFile from NameSpace Compiler")
 
 
@@ -104,9 +104,7 @@ logger.setLevel(logging.DEBUG)
 
 # Create a new namespace. Note that the namespace name is not significant.
 # Get the name of the namespace (to include in headers)
-generateNamespaceModelFileName = "myGeneratedNamespaceHeader"
-if 'generatedNamspaceFileName' in args._get_kwargs():
-  generateNamespaceModelFileName = args._get_kwargs()['generatedNamspaceFileName']
+generateNamespaceModelFileName = args.generatedNamspaceFileName
 ns = opcua_namespace(generateNamespaceModelFileName)
 
 ## Einlesen der zusätzlichen ServerList XML Datei

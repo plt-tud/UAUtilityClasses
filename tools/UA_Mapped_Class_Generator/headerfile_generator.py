@@ -84,7 +84,9 @@ class headerfile_generator:
     else:
       header.write("class " + classname + " : ua_mapped_class {\n")
     header.write("private:\n")
-        
+    header.write("std::string name;\n")
+    header.write("UA_NodeId rootNodeId;\n")
+    
     if self.isServerClass(classname):
       self.generateHeaderServerVariables(header, variableList)
       for vn in variableList:
@@ -117,17 +119,16 @@ class headerfile_generator:
     
     if self.isServerClass(classname):
       header.write(INDENT + classname + "(std::string name, uint16_t opcuaPort);\n")
-      header.write(INDENT + "~" + classname + "();\n")
       header.write(INDENT + "void workerThread();\n")
     else:
       header.write(INDENT + classname + "(std::string name, UA_NodeId baseNodeId, UA_Server* server);\n")
-      header.write(INDENT + "~" + classname + "();\n")
+    header.write(INDENT + "~" + classname + "();\n")
+    header.write("\n")
+    header.write(INDENT + "// Getter and Setter functions \n")
+    for vn in variableList:
+      header.write(INDENT + toolBox_generator.getCPPTypeByUAType(str(vn.dataType().target().browseName())) + " get_" + toolBox_generator.getNodeCodeName(vn) + "();\n")
+      header.write(INDENT + "void set_" + toolBox_generator.getNodeCodeName(vn) + "("+ toolBox_generator.getCPPTypeByUAType(str(vn.dataType().target().browseName()))+" value);\n")
       header.write("\n")
-      header.write(INDENT + "// Getter and Setter functions \n")
-      for vn in variableList:
-        header.write(INDENT + toolBox_generator.getCPPTypeByUAType(str(vn.dataType().target().browseName())) + " get_" + toolBox_generator.getNodeCodeName(vn) + "();\n")
-        header.write(INDENT + "void set_" + toolBox_generator.getNodeCodeName(vn) + "("+ toolBox_generator.getCPPTypeByUAType(str(vn.dataType().target().browseName()))+" value);\n")
-        header.write("\n")
     
     self.generateHeaderMethods(header, methodList)
     

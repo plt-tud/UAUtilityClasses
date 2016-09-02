@@ -58,7 +58,7 @@ def getProxyTypeByUAType(ua_typestring):
   elif ua_typestring.lower() == "datetime":
     return "DATETIME"
   elif ua_typestring.lower() in ["bool", "boolean"]:
-    return "BOOLEAN"
+    return "BOOL"
   # FIXME: Lots of missing types here...
   else:
     return "NonMappableType_UAType_" + ua_typestring; 
@@ -103,3 +103,6 @@ def substitutePunctuationCharacters(input):
     substitution = substitution + '_'
 
   return input.translate(string.maketrans(illegal, substitution), illegal)
+
+def getNodeIdInitializer(node):
+  pass

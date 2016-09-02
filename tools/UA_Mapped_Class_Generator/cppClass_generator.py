@@ -68,7 +68,6 @@ class cppClass_generator():
     (header, implementation) = targetfiles
     classname = toolBox_generator.getNodeCodeName(objectNode)
     logger.debug("Generating ObjectType " + str(objectNode.id()) + " " + classname)
-    print("Generating ObjectType " + str(objectNode.id()) + " " + classname)
     methods=[]
     variables=[]
     objects=[]
@@ -100,11 +99,12 @@ class cppClass_generator():
     
   def generateAll(self, outputPath):
     for n in self.namespace.nodes:
+      # TODO: clientReflection classes
       if n.nodeClass() == NODE_CLASS_OBJECTTYPE and not n in self.ignoredNodes:
         name = toolBox_generator.getNodeCodeName(n)
         print(name+".cpp, "+name+".hpp")
-        cppPath = outputPath + "/cpp/"
-        hppPath = outputPath + "/hpp/"
+        cppPath = outputPath + "/serverReflection/"
+        hppPath = cppPath
         if not os.path.exists(cppPath):
           os.makedirs(cppPath)
         if not os.path.exists(hppPath):

@@ -200,10 +200,7 @@ class cppfile_generator():
     # Or like this...
     # UA_NodeId_copy(nodePairList_getTargetIdBySourceId(this->ownedNodes, UA_NODEID_NUMERIC(IMMODULE_NSID, MODULE_TYPE_SIGNALIST_ID)), &this->SignalListId);
     
-    
-    
     # Map function calls
-    implementation.write(INDENT + "UA_FunctionCall_Map mapThis;\n")
     implementation.write(INDENT + "UA_FunctionCall_Map mapThis;\n")
     for mn in methodList:
       implementation.write(INDENT + "mapThis.push_back((UA_FunctionCall_Map_Element) {.typeTemplateId = UA_NODEID_NUMERIC(\"FIXME_IMMODULE_NSID\", \"FIXME_COMMANDSET_61512_" + toolBox_generator.getNodeCodeName(mn) + "\"), .lookupTable = UA_CALLPROXY_TABLE(" + classname + ", " + toolBox_generator.getNodeCodeName(mn) + "), .callback = UA_CALLPROXY_NAME(" + classname + ", " + toolBox_generator.getNodeCodeName(mn) + ") }); \n")
@@ -213,8 +210,9 @@ class cppfile_generator():
     # Map DataSources
     implementation.write(INDENT + "UA_DataSource_Map mapDs;\n")
     # create for every var setter/getter proxys
+    
     for vn in variableList:
-      implementation.write(INDENT + "mapDs.push_back((UA_DataSource_Map_Element) { .typeTemplateId = UA_NODEID_NUMERIC(\"FIXME_2\", \"FIXME_6004\"), .read=UA_RDPROXY_NAME(" + classname + ", get_" + toolBox_generator.getNodeCodeName(vn) + "), .write=UA_WRPROXY_NAME(" + classname + ", set_" + toolBox_generator.getNodeCodeName(vn) + ")});\n")
+      implementation.write(INDENT + "mapDs.push_back((UA_DataSource_Map_Element) { .typeTemplateId = UA_NODEID_NUMERIC(" + str(vn.id().ns) + ", " + str(vn.id().i) + "), .read=UA_RDPROXY_NAME(" + classname + ", get_" + toolBox_generator.getNodeCodeName(vn) + "), .write=UA_WRPROXY_NAME(" + classname + ", set_" + toolBox_generator.getNodeCodeName(vn) + ")});\n")
     
     implementation.write(INDENT + "ua_callProxy_mapDataSources(this->mappedServer, this->ownedNodes, &mapDs, (void *) this);\n")
     
