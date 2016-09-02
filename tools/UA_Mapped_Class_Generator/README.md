@@ -30,7 +30,7 @@ How to use:
 
 |--- | --- |
 |`python ./generate_cppClasses.py` | `-> Main file` |
-| -i ../../model/NodeID_Blacklist_FullNS0.txt | d | 
+| `-i ../../model/NodeID_Blacklist_FullNS0.txt` |  | 
 |1 | 2 |
 
 
