@@ -18,7 +18,7 @@ How to use:
 	The example define two server classes "mtcaModule" and "ModuleType".
 
 2. Lets start
-| ----------------------------------------------|:-----------------------------------------------------:|
+| ---|---|
 | python ./generate_cppClasses.py       	| -> Main file |
 | -i ../../model/NodeID_Blacklist_FullNS0.txt  	|      | 
 | -b ../../model/NodeID_Blacklist.txt 		| are neat      |  
