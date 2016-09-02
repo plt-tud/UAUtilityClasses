@@ -239,19 +239,23 @@ void udp_beacon::registerHost(std::string uri, uint8_t expectInterval, uint16_t 
 void udp_beacon::setCallback_new(beacon_event_callback callback, void *handle) 
 {
     this->callback_new = callback;
+    this->callback_new_handle = handle;
 }
 
 void udp_beacon::setCallback_missed(beacon_event_callback callback, void *handle)
 {
     this->callback_missed = callback;
+    this->callback_missed_handle = handle;
 }
 
 void udp_beacon::setCallback_down(beacon_event_callback callback, void *handle)
 {
     this->callback_down = callback;
+    this->callback_down_handle = handle;
 }
 
 void udp_beacon::setCallback_reconnect(beacon_event_callback callback, void *handle)
 {
     this->callback_reconnect = callback;
+    this->callback_reconnect_handle = handle;
 }
