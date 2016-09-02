@@ -29,9 +29,9 @@ How to use:
 | -ns mtpmodule_namespaceinit_generated | -> file name of the output from namespaceCompiler |
 
 Markdown | Less | Pretty
-|--- | --- | ---|
-|*Still* | `renders` | **nicely**|
-|1 | 2 | 3|
+|--- | --- |
+|python ./generate_cppClasses.py | > Main file |
+|1 | 2 |
 
 
 
