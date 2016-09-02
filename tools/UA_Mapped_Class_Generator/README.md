@@ -19,7 +19,7 @@ How to use:
 
 2. Lets start
 
-| Befehl | Bedeutung |
+| Command | Description |
 |--- | --- |
 |`python ./generate_cppClasses.py` | `Main file` |
 | `-i ../../model/NodeID_Blacklist_FullNS0.txt` | | 
@@ -30,6 +30,7 @@ How to use:
 | `-l ../../model/serverList.xml` | `path to the server class definition` |
 | `-ns mtpmodule_namespaceinit_generated` | `file name of the output from namespaceCompiler` |
 
-
+Complet command:
+`python ./generate_cppClasses.p y -i ../../model/NodeID_Blacklist_FullNS0.txt -b ../../model/NodeID_Blacklist.txt ../../model/Opc.Ua.NodeSet2.xml ../../model/moduleim.xml ../../build/src_generated/ -l ../../model/serverList.xml -ns mtpmodule_namespaceinit_generated`
 
 
