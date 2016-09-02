@@ -85,7 +85,7 @@ public:
   uint32_t doStart();
   int32_t terminate();
   
-  virtual void workerThread_setup() = 0;
+  virtual void workerThread_setup()   = 0;
   virtual void workerThread_iterate() = 0;
   virtual void workerThread_cleanup() = 0;
 };

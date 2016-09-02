@@ -111,7 +111,6 @@ ns = opcua_namespace(generateNamespaceModelFileName)
 # TODO: Provide additional config class/mechanism for more elaborate annotations (subscription intervals, ...)
 serverHostList = []
 clientHostList = []
-print(args._get_kwargs())
 if args.classannotations != None:
   logger.info("Have class annotations")
   xmldoc = minidom.parse(args.classannotations)

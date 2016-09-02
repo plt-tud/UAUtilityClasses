@@ -81,11 +81,14 @@ class headerfile_generator:
     
     if self.isServerClass(classname):
       header.write("class " + classname + " : public ipc_managed_object, ua_mapped_class {\n")
+      header.write("private:\n")
+      header.write(INDENT + "UA_Boolean runUAServer;\n")
+      header.write(INDENT + "std::thread *serverThread;\n")
     else:
       header.write("class " + classname + " : ua_mapped_class {\n")
-    header.write("private:\n")
-    header.write("std::string name;\n")
-    header.write("UA_NodeId rootNodeId;\n")
+      header.write("private:\n")
+    header.write(INDENT + "std::string name;\n")
+    header.write(INDENT + "UA_NodeId rootNodeId;\n")
     
     if self.isServerClass(classname):
       self.generateHeaderServerVariables(header, variableList)
@@ -119,7 +122,9 @@ class headerfile_generator:
     
     if self.isServerClass(classname):
       header.write(INDENT + classname + "(std::string name, uint16_t opcuaPort);\n")
-      header.write(INDENT + "void workerThread();\n")
+      header.write(INDENT + "void workerThread_setup();\n")
+      header.write(INDENT + "void workerThread_iterate();\n")
+      header.write(INDENT + "void workerThread_cleanup();\n")
     else:
       header.write(INDENT + classname + "(std::string name, UA_NodeId baseNodeId, UA_Server* server);\n")
     header.write(INDENT + "~" + classname + "();\n")

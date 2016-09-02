@@ -90,6 +90,7 @@ class cppfile_generator():
     # -> needed? implementation.write("#include \"string.h\"\n\n")
     implementation.write(classname + "::" + classname + "(std::string name, uint16_t opcuaPort) : ua_mapped_class(nullptr, UA_NODEID_NULL) {\n")
     implementation.write(INDENT + "this->name = name;\n")
+    implementation.write(INDENT + "this->runUAServer=UA_FALSE; // Needs workerThread_setup\n");
     implementation.write(INDENT + "this->constructserver(opcuaPort);\n")
     implementation.write("}\n\n")
       
@@ -184,13 +185,13 @@ class cppfile_generator():
     implementation.write(INDENT + "}\n\n")
     implementation.write("\n")
     implementation.write(INDENT + "UA_ObjectAttributes oAttr;\n")
-    implementation.write(INDENT + "oAttr.displayName = UA_LOCALIZEDTEXT((char*)\"en_US\", (char*)\"PlaceHolder\");\n")
-    implementation.write(INDENT + "oAttr.description = UA_LOCALIZEDTEXT((char*)\"en_US\", (char*)\"PlaceHolder\");\n")
+    implementation.write(INDENT + "oAttr.displayName = UA_LOCALIZEDTEXT_ALLOC((char*)\"en_US\", this->name.c_str());\n")
+    implementation.write(INDENT + "oAttr.description = UA_LOCALIZEDTEXT_ALLOC((char*)\"en_US\", this->name.c_str());\n")
     implementation.write("\n")      
     implementation.write(INDENT + "UA_INSTATIATIONCALLBACK(icb);\n")
     implementation.write(INDENT + "UA_Server_addObjectNode(this->mappedServer, UA_NODEID_NUMERIC(1,0),\n")
     implementation.write(INDENT + INDENT + INDENT + "UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER), UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),\n")
-    implementation.write(INDENT + INDENT + INDENT + "UA_QUALIFIEDNAME(1, (char*)\"PlaceHolder\"), UA_NODEID_NUMERIC(2, " + toolBox_generator.getNodeIdDefineString(self.objectNode) + "), oAttr, &icb, &createdNodeId);\n")
+    implementation.write(INDENT + INDENT + INDENT + "UA_QUALIFIEDNAME_ALLOC(1, this->name.c_str()), UA_NODEID_NUMERIC(" + str(self.objectNode.id().ns) + ", " + toolBox_generator.getNodeIdDefineString(self.objectNode) + "), oAttr, &icb, &createdNodeId);\n")
     
     
     #Something like this should be printed
@@ -221,23 +222,43 @@ class cppfile_generator():
   
     
   def generateWorkerMethode(self, implementation, classname):
-    implementation.write("void " + classname + "::workerThread() {\n")
+    implementation.write("void " + classname + "::workerThread_setup() {\n")
     implementation.write(INDENT + "if (this->mappedServer == nullptr) {\n")
     implementation.write(INDENT + INDENT + "return;\n")
     implementation.write(INDENT + "}\n\n")
-    
+    implementation.write(INDENT + "#ifdef DISABLE_THREADING\n")
+    implementation.write(INDENT + INDENT + "UA_Server_run_startup(this->mappedServer);\n")
+    implementation.write(INDENT + "#else\n")
     implementation.write(INDENT + "this->thread_run = true;\n")
-    implementation.write(INDENT + "UA_Boolean runUAServer = UA_TRUE;\n")
-    implementation.write(INDENT + "thread *serverThread = new std::thread(UA_Server_run, this->mappedServer, &runUAServer);\n")
-    implementation.write(INDENT + "while (runUAServer == UA_TRUE) {\n")
-    implementation.write(INDENT + INDENT + "if (! this->isRunning()) {\n")
-    implementation.write(INDENT + INDENT + INDENT + "runUAServer = UA_FALSE;\n")
-    implementation.write(INDENT + INDENT + "}\n")
-    #implementation.write(INDENT + INDENT + "usleep(100*1000); //100ms\n") ## need #include <unistd.h>
-    implementation.write(INDENT + "}\n")
-    implementation.write(INDENT + "if (serverThread->joinable()) {\n")
-    implementation.write(INDENT + INDENT + "serverThread->join();\n")
-    implementation.write(INDENT + "}\n\n")
+    implementation.write(INDENT + "this->runUAServer = UA_TRUE;\n")
+    implementation.write(INDENT + "this->serverThread = new std::thread(UA_Server_run, this->mappedServer, &runUAServer);\n")
+    implementation.write(INDENT + "#endif\n")
+    implementation.write("}\n\n")
     
-    implementation.write(INDENT + "delete serverThread;\n")
+    implementation.write("void " + classname + "::workerThread_iterate() {\n")
+    implementation.write(INDENT + "if (this->mappedServer == nullptr) {\n")
+    implementation.write(INDENT + INDENT + "return;\n")
+    implementation.write(INDENT + "}\n\n")
+    implementation.write(INDENT + "if (! this->isRunning()) {\n")
+    implementation.write(INDENT + INDENT + "this->runUAServer = UA_FALSE;\n")
+    implementation.write(INDENT + "}\n")
+    implementation.write(INDENT + "#ifdef DISABLE_THREADING\n")
+    implementation.write(INDENT + "uint16_t timeout = UA_Server_run_iterate(this->mappedServer, UA_TRUE);\n")
+    implementation.write(INDENT + "#endif\n")
+    implementation.write(INDENT + "this->reschedule(0, TIMETICK_INTERVAL * 1000000);\n")
+  
+    implementation.write("}\n\n")
+    
+    implementation.write("void " + classname + "::workerThread_cleanup() {\n")
+    implementation.write(INDENT + "if (this->mappedServer == nullptr) {\n")
+    implementation.write(INDENT + INDENT + "return;\n")
+    implementation.write(INDENT + "}\n\n")
+    implementation.write(INDENT + "this->runUAServer == UA_FALSE;\n")
+    implementation.write(INDENT + "#ifndef DISABLE_THREADING\n")
+    implementation.write(INDENT + "if (this->serverThread->joinable()) {\n")
+    implementation.write(INDENT + INDENT + "this->serverThread->join();\n")
+    implementation.write(INDENT + "}\n")
+    implementation.write(INDENT + "delete this->serverThread;\n")
+    implementation.write(INDENT + "#endif\n")
+    implementation.write(INDENT + "this->serverThread = nullptr;\n")
     implementation.write("}\n\n")
