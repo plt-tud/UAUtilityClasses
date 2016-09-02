@@ -64,8 +64,8 @@ void ipc_manager::periodiclyKickWorkerThread()
 void ipc_manager::workerThread_setup()   
 {
   #ifndef DISABLE_THREADING
-  this->lock = new std::unique_lock<std::mutex>(this->mtx_threadOperations);
   this->kicker = new std::thread(call_periodiclyKickWorkerThread, this);
+  this->lock   = new std::unique_lock<std::mutex>(this->mtx_threadOperations);
   #endif
 }
 

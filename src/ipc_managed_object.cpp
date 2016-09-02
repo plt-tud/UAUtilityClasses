@@ -166,12 +166,15 @@ uint32_t ipc_managed_object::doStart()
     return 0;
   }
 #endif
-  if(!this->isRunning())
+  if(!this->isRunning()) {
+    #ifndef DISABLE_THREADING // Unlock; this will become a semaphore through setup
+    this->mtx_threadOperations.unlock();
+    #endif
     this->workerThread_setup();
+  }
   this->thread_run = true; 
 #ifndef DISABLE_THREADING
   this->threadTask = new std::thread(ipc_managed_object_callWorker, this);
-  this->mtx_threadOperations.unlock();  
 #endif
   return 0;
 }

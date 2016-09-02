@@ -54,6 +54,7 @@ public:
     ua_remoteNode() {
         UA_NodeId_init(&this->nodeId);
         UA_NodeId_init(&this->typeDefinition);
+        UA_NodeId_copy(&UA_NODEID_NULL, &this->typeDefinition);
         this->nodeClass = UA_NODECLASS_UNSPECIFIED;
     };
     ~ua_remoteNode() {
