@@ -13,6 +13,10 @@ A set of classes facilitating the UA based reflection.
 
 Python Generator that creates UA mapped class prototypes derived from OPC UA XML Descriptions.
 
+## IPC Managed Classes & Manager
+
+A framework for creating parallelizable objects.
+
 ## UA RemoteMap
 
 A Server scanner that assists in searching and mapping remote nodes.
@@ -20,3 +24,10 @@ A Server scanner that assists in searching and mapping remote nodes.
 ## UDP Beacon
 
 A UDP Broadcast Beacon class that assists search/discovery of servers in a subnet.
+
+# Writeback Policy
+
+Different projects using these utility classes are likely to generate both new features and bugfixes. For consistency, the following applies:
+
+  * Changes introduced by projects shall always be written into a new branch dedicated to that project. 
+  * Merging of features into the master branch will occur once a conflict-free and non project specific port has been verified.
