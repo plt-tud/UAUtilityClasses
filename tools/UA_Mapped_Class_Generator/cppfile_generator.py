@@ -45,7 +45,8 @@ class cppfile_generator():
   #variables = None
   #objects = None
       
-  def __init__(self, generatedNamspaceFileName, serverList = None):
+  def __init__(self, generatedNamspaceFileName, objectNode, serverList = None):
+    self.objectNode = objectNode
     self.ignoredNodes = []
     self.serverList = serverList
     self.generatedNamspaceFileName = generatedNamspaceFileName  
@@ -54,13 +55,12 @@ class cppfile_generator():
     self.ignoredNodes += ignoredNodesList
     
   def isServerClass(self, classname):
-    for serverConfig in self.serverList:
-      if serverConfig.name == classname:
-        return True;
-    return False;
+    if self.serverList == None:
+      return False
+    return True
   
-  def generateImplementationFile(self, implementation, objectNode, methodList, variableList, objectList):
-    classname = toolBox_generator.getNodeCodeName(objectNode);
+  def generateImplementationFile(self, implementation, methodList, variableList, objectList):
+    classname = toolBox_generator.getNodeCodeName(self.objectNode);
       
     implementation.write("#include \"" + classname + ".hpp\"\n")
     implementation.write("extern \"C\" {\n")
@@ -72,24 +72,24 @@ class cppfile_generator():
     implementation.write("#include \"ua_proxies_typeconversion.h\"\n\n")
     
     if  self.isServerClass(classname):
-      self.generateServerClass(implementation, objectNode, methodList, variableList, objectList)
+      self.generateServerClass(implementation, methodList, variableList, objectList)
     else:
       ## binding lib's
-      self.generateClass(implementation, objectNode, methodList, variableList, objectList)
+      self.generateClass(implementation, methodList, variableList, objectList)
       
     self.generateDestructor(implementation, classname)
     self.generateVariable(implementation, variableList, classname)
     self.generateMethods(implementation, methodList, classname)
-    self.generateClassMapSelfToNS(implementation, classname, objectNode, variableList, methodList)
+    self.generateClassMapSelfToNS(implementation, classname, variableList, methodList)
 
 
-  def generateServerClass(self, implementation, objectNode, methodList, variableList, objectList):
-    classname = toolBox_generator.getNodeCodeName(objectNode);
+  def generateServerClass(self, implementation, methodList, variableList, objectList):
+    classname = toolBox_generator.getNodeCodeName(self.objectNode);
     
     ## hard coded value "name" and "port" -> maybe bad?
     # -> needed? implementation.write("#include \"string.h\"\n\n")
-    implementation.write(classname + "::" + classname + "(std::string moduleName, uint16_t opcuaPort) : ua_mapped_class(nullptr, UA_NODEID_NULL) {\n")
-    implementation.write(INDENT + "this->name = moduleName;\n")
+    implementation.write(classname + "::" + classname + "(std::string name, uint16_t opcuaPort) : ua_mapped_class(nullptr, UA_NODEID_NULL) {\n")
+    implementation.write(INDENT + "this->name = name;\n")
     implementation.write(INDENT + "this->constructserver(opcuaPort);\n")
     implementation.write("}\n\n")
       
@@ -116,10 +116,11 @@ class cppfile_generator():
     self.generateWorkerMethode(implementation, classname)
     
     
-  def generateClass(self, implementation, objectNode, methodList, variableList, objectList):
-    classname = toolBox_generator.getNodeCodeName(objectNode);
+  def generateClass(self, implementation, methodList, variableList, objectList):
+    classname = toolBox_generator.getNodeCodeName(self.objectNode);
     
-    implementation.write(classname + "::" + classname + "(UA_NodeId baseNodeId, UA_Server* server) : ua_mapped_class(server, baseNodeId) {\n")
+    implementation.write(classname + "::" + classname + "(std::string name, UA_NodeId baseNodeId, UA_Server* server) : ua_mapped_class(server, baseNodeId) {\n")
+    implementation.write(INDENT + "this->name = name;\n")
     implementation.write(INDENT + "this->mapSelfToNamespace();\n")
     implementation.write("}\n\n")
             
@@ -170,7 +171,7 @@ class cppfile_generator():
             
         
     ## Methode "mapSelfToNamespace"
-  def generateClassMapSelfToNS(self, implementation, classname, objectNode, variableList, methodList):
+  def generateClassMapSelfToNS(self, implementation, classname, variableList, methodList):
     ## Lastly, always add mapSelfToNamespace
     implementation.write("UA_StatusCode " + classname + "::mapSelfToNamespace() {\n")        
 
@@ -189,7 +190,7 @@ class cppfile_generator():
     implementation.write(INDENT + "UA_INSTATIATIONCALLBACK(icb);\n")
     implementation.write(INDENT + "UA_Server_addObjectNode(this->mappedServer, UA_NODEID_NUMERIC(1,0),\n")
     implementation.write(INDENT + INDENT + INDENT + "UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER), UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),\n")
-    implementation.write(INDENT + INDENT + INDENT + "UA_QUALIFIEDNAME(1, (char*)\"PlaceHolder\"), UA_NODEID_NUMERIC(2, " + toolBox_generator.getNodeIdDefineString(objectNode) + "), oAttr, &icb, &createdNodeId);\n")
+    implementation.write(INDENT + INDENT + INDENT + "UA_QUALIFIEDNAME(1, (char*)\"PlaceHolder\"), UA_NODEID_NUMERIC(2, " + toolBox_generator.getNodeIdDefineString(self.objectNode) + "), oAttr, &icb, &createdNodeId);\n")
     
     
     #Something like this should be printed

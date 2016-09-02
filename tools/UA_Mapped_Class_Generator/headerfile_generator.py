@@ -54,24 +54,22 @@ class headerfile_generator:
   #variables = None
   #objects = None
   
-  def __init__(self, namespace, serverList=None):
+  def __init__(self, namespace, objectNode, serverList=None):
     self.namespace = namespace
-    self.serverList = serverList
     self.ignoredNodes = []
-    #self.header = header
-    #self.objectNode = objectNode
-    #self.methods = methods
-    #self.variables = variables
-    #self.objects = objects
+    self.objectNode = objectNode
+    if serverList != None and serverList.name == toolBox_generator.getNodeCodeName(self.objectNode):
+      self.serverList = serverList
+    else:
+      self.serverList = None
   
   def isServerClass(self, classname):
-    for serverConfig in self.serverList:
-      if serverConfig.name == classname:
-        return True;
-    return False;
+    if self.serverList == None:
+      return False
+    return True
   
-  def generateHeaderFile(self, header, objectNode, methodList, variableList, objectList):
-    classname = toolBox_generator.getNodeCodeName(objectNode);
+  def generateHeaderFile(self, header, methodList, variableList, objectList):
+    classname = toolBox_generator.getNodeCodeName(self.objectNode);
         
     # Print Header Guards
     header.write("#ifndef HAVE_" + classname.capitalize() + "_H\n")
@@ -79,14 +77,12 @@ class headerfile_generator:
         
     if self.isServerClass(classname):
       header.write("#include <ipc_managed_object.h>\n")
-      
     header.write("#include \"ua_mapped_class.h\"\n\n")
     
     if self.isServerClass(classname):
       header.write("class " + classname + " : public ipc_managed_object, ua_mapped_class {\n")
     else:
       header.write("class " + classname + " : ua_mapped_class {\n")
-  
     header.write("private:\n")
         
     if self.isServerClass(classname):
@@ -120,11 +116,11 @@ class headerfile_generator:
     header.write("public:\n")
     
     if self.isServerClass(classname):
-      header.write(INDENT + classname + "(std::string moduleName, uint16_t opcuaPort);\n")
+      header.write(INDENT + classname + "(std::string name, uint16_t opcuaPort);\n")
       header.write(INDENT + "~" + classname + "();\n")
       header.write(INDENT + "void workerThread();\n")
     else:
-      header.write(INDENT + classname + "(UA_NodeId baseNodeId, UA_Server* server);\n")
+      header.write(INDENT + classname + "(std::string name, UA_NodeId baseNodeId, UA_Server* server);\n")
       header.write(INDENT + "~" + classname + "();\n")
       header.write("\n")
       header.write(INDENT + "// Getter and Setter functions \n")

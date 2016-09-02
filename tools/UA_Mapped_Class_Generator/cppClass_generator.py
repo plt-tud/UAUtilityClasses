@@ -87,11 +87,16 @@ class cppClass_generator():
           methods.append(r.target())
     ## create all files
     # 
-    cppfile = cppfile_generator(self.generatedNamspaceFileName, self.serverHostList)
-    headerfile = headerfile_generator(self.namespace, self.serverHostList)
+    classname = toolBox_generator.getNodeCodeName(objectNode);
+    config = None
+    for serverConfig in self.serverHostList:
+      if serverConfig.name == classname:
+         config = serverConfig
+    cppfile = cppfile_generator(self.generatedNamspaceFileName, objectNode, config)
+    headerfile = headerfile_generator(self.namespace, objectNode, config)
     
-    cppfile.generateImplementationFile(implementation, objectNode, methods, variables, objects)
-    headerfile.generateHeaderFile(header, objectNode, methods, variables, objects)    
+    cppfile.generateImplementationFile(implementation, methods, variables, objects)
+    headerfile.generateHeaderFile(header, methods, variables, objects)    
     
   def generateAll(self, outputPath):
     for n in self.namespace.nodes:
