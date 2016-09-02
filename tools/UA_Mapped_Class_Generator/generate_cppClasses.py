@@ -22,13 +22,12 @@ import logging
 import argparse
 from XMLPreprocessor import XMLPreprocessor
 from cppClass_generator import cppClass_generator
+import toolBox_generator
 
 logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(
-    description="""Parse OPC UA NamespaceXML file(s) and create C code for generating nodes in open62541
-
-generate_open62541CCode.py will first read all XML files passed on the command line, then link and check the namespace. All nodes that fulfill the basic requirements will then be printed as C-Code intended to be included in the open62541 OPC UA Server that will initialize the corresponding namespace.""",
+    description="""Parse OPC UA NamespaceXML file(s) and create C code for generating nodes in open62541 generate_open62541CCode.py will first read all XML files passed on the command line, then link and check the namespace. All nodes that fulfill the basic requirements will then be printed as C-Code intended to be included in the open62541 OPC UA Server that will initialize the corresponding namespace.""",
     formatter_class=argparse.RawDescriptionHelpFormatter)
 parser.add_argument('infiles',
                     metavar="<namespaceXML>",
@@ -60,8 +59,23 @@ parser.add_argument('-s','--suppress',
                     choices=['description', 'browseName', 'displayName', 'writeMask', 'userWriteMask','nodeid'],
                     default=[],
                     help="Suppresses the generation of some node attributes. Currently supported options are 'description', 'browseName', 'displayName', 'writeMask', 'userWriteMask' and 'nodeid'.")
+parser.add_argument('-l','--serverlist',
+                    metavar="<serverlist>",
+                    type=argparse.FileType('r'),
+                    #action='append',
+                    dest="serverlist",
+                    default=[],
+                    help="Server to init root Node")
+parser.add_argument('-ns','--generatedNamspaceFileName',
+                    metavar="<generatedNamspaceFileName>",
+                    #action='append',
+                    dest="generatedNamspaceFileName",
+                    #default=[],
+                    help="Name of the generated NameSpaceFile from NameSpace Compiler")
+
 
 parser.add_argument('-v','--verbose', action='count', help='Make the script more verbose. Can be applied up to 4 times')
+
 
 args = parser.parse_args()
 
@@ -77,8 +91,11 @@ elif (verbosity==3):
   level = logging.INFO
 elif (verbosity>=4):
   level = logging.DEBUG
+  
 logging.basicConfig(level=level)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+
+
 
 # Creating the header is tendious. We can skip the entire process if
 # the header exists.
@@ -88,23 +105,32 @@ logger.setLevel(logging.INFO)
 #  exit(0)
 
 # Open the output file
-outfileh = open(args.outputFile+".h", r"w+")
-outfilec = open(args.outputFile+".c", r"w+")
-
+#outfileh = open(args.outputFile+".h", r"w+")
+#outfilec = open(args.outputFile+".c", r"w+")
 # Create a new namespace. Note that the namespace name is not significant.
 ns = opcua_namespace("cppGen")
+
+## Einlesen der zusätzlichen ServerList XML Datei
+from xml.dom import minidom
+xmldoc = minidom.parse(args.serverlist)
+serverClass = xmldoc.getElementsByTagName('serverClass')
+serverList = xmldoc.getElementsByTagName('name')
+
+
 
 # Clean up the XML files by removing duplicate namespaces and unwanted prefixes
 preProc = XMLPreprocessor()
 for xmlfile in args.infiles:
-  logger.info("Preprocessing " + str(xmlfile.name))
-  preProc.addDocument(xmlfile.name)
+	logger.info("Preprocessing " + str(xmlfile.name))
+	preProc.addDocument(xmlfile.name)
+  
 preProc.preprocessAll()
 
+ns.parseXML(xmlfile)
 # Parse the XML files
 for xmlfile in preProc.getPreProcessedFiles():
-  logger.info("Parsing " + str(xmlfile))
-  ns.parseXML(xmlfile)
+	logger.info("Parsing " + str(xmlfile))
+	ns.parseXML(xmlfile)
 
 # We need to notify the open62541 server of the namespaces used to be able to use i.e. ns=3
 namespaceArrayNames = preProc.getUsedNamespaceArrayNames()
@@ -163,8 +189,10 @@ for ignore in args.ignoreFiles:
       ignoreNodes.append(ns.getNodeByIDString(id))
   ignore.close()
 
-cppgen = cppClass_generator(ns)
+cppgen = cppClass_generator(ns, serverList, args.generatedNamspaceFileName)
+
 cppgen.addIgnoredNodes(ignoreNodes)
-cppgen.generateAll()
+cppgen.generateAll(args.outputFile)
+
 
 logger.info("Namespace generation code successfully printed")
