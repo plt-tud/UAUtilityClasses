@@ -28,9 +28,9 @@ How to use:
 | -l ../../model/serverList.xml | -> path to the server class definition |
 | -ns mtpmodule_namespaceinit_generated | -> file name of the output from namespaceCompiler |
 
-Markdown | Less | Pretty
+Markdown | Less |
 |--- | --- |
-|python ./generate_cppClasses.py | > Main file |
+|`python ./generate_cppClasses.py` | `-> Main file` |
 |1 | 2 |
 
 
