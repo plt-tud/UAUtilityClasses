@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2016 <copyright holder> <email>
+ * Copyright (c) 2016 Chris Iatrou <Chris_Paul.Iatrou@tu-dresden.de>
+ * Chair for Process Systems Engineering
+ * Technical University of Dresden
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -28,7 +30,7 @@
 #define UA_REMOTEINSTANCE_MAP_H
 
 extern "C" {
-  #include "open62541/open62541.h"
+  #include "open62541.h"
 }
 
 #include <string>
@@ -77,7 +79,7 @@ public:
     ~ua_remoteInstance_map();
     
     int32_t mapRemoteSystemInstances();
-    int32_t mapRemoteSystemInstances(uint32_t mappingDepthLimit);
+    int32_t mapRemoteSystemInstances(int32_t mappingDepthLimit);
     ua_remoteNode *findNodeByName(ua_remoteNode *node, std::string name);
     void printNamespace();
     void printNamespace(ua_remoteNode *rootNode, uint32_t depth);

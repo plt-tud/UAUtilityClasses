@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2016 <copyright holder> <email>
+ * Copyright (c) 2016 Chris Iatrou <Chris_Paul.Iatrou@tu-dresden.de>
+ * Chair for Process Systems Engineering
+ * Technical University of Dresden
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -29,7 +31,7 @@
 
 extern "C" {
   #include <unistd.h>
-  #include "open62541/open62541.h"
+  #include "open62541.h"
 }
 
 #include "logger.h"
@@ -159,26 +161,21 @@ static UA_StatusCode nodeIter(UA_NodeId childId, UA_Boolean isInverse, UA_NodeId
     if (thisChild != nullptr) {
         /* If max depth is reached, just abort */
         if (hhandle->depthLimit > 0 && hhandle->iterationDepth >= hhandle->depthLimit) {
-            return UA_STATUSCODE_GOOD;
+           return UA_STATUSCODE_GOOD;
         }
         /* Modify handle, then recurse */
-        hhandle->iterationDepth++;
         ua_remoteNode *oldParent = hhandle->parent;
         hhandle->parent = thisChild;
+        hhandle->iterationDepth++;
         UA_Client_forEachChildNodeCall(hhandle->client, childId, nodeIter, (void *) hhandle);
-        hhandle->parent = oldParent;
         hhandle->iterationDepth--;
+        hhandle->parent = oldParent;
     }
     
     return UA_STATUSCODE_GOOD;
 }
 
-int32_t mapRemoteSystemInstances(uint32_t mappingDepthLimit) {
-    
-}
-
-int32_t ua_remoteInstance_map::mapRemoteSystemInstances()
-{
+int32_t ua_remoteInstance_map::mapRemoteSystemInstances(int32_t mappingDepthLimit) {
     UA_ClientState orgClientState;
     if ((orgClientState = UA_Client_getState(this->client)) != UA_CLIENTSTATE_CONNECTED) {
         LOG_DEBUG("Connecting client for mapping purposes...");
@@ -189,6 +186,8 @@ int32_t ua_remoteInstance_map::mapRemoteSystemInstances()
     
     UA_NodeId nullId = UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER);
     ua_iterator_handle iterhandle(this->client, &this->rootNode, this);
+    iterhandle.depthLimit = mappingDepthLimit;
+    iterhandle.iterationDepth = 0;
     UA_Client_forEachChildNodeCall(this->client, nullId, nodeIter, (void *) &iterhandle);
     
     if (orgClientState != UA_CLIENTSTATE_CONNECTED) {
@@ -196,6 +195,11 @@ int32_t ua_remoteInstance_map::mapRemoteSystemInstances()
         UA_Client_disconnect(this->client);
     }
     return 0;
+}
+
+int32_t ua_remoteInstance_map::mapRemoteSystemInstances()
+{
+    this->mapRemoteSystemInstances(-1);
 }
 
 ua_remoteNode * ua_remoteInstance_map::findNodeByName(ua_remoteNode *node, std::string name) {
