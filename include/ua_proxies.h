@@ -29,7 +29,7 @@
 #ifndef HAVE_UA_PROXIES_H
 #define HAVE_UA_PROXIES_H
 
-#include "open62541/open62541.h"
+#include "open62541.h"
 #include <list>
 
 #include "ua_proxies_typeconversion.h"
