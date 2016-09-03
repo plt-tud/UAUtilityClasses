@@ -64,45 +64,12 @@ class cppClass_generator():
   def addIgnoredNodes(self, ignoredNodesList):
     self.ignoredNodes += ignoredNodesList    
     
-  def generateObject(self, objectNode, targetfiles):
-    (header, implementation) = targetfiles
-    classname = toolBox_generator.getNodeCodeName(objectNode)
-    logger.debug("Generating ObjectType " + str(objectNode.id()) + " " + classname)
-    methods=[]
-    variables=[]
-    objects=[]
-    
-    for r in objectNode.getReferences():
-      if r.isForward() and r.target() != None:
-        if((r.target().nodeClass() == NODE_CLASS_VARIABLE or  r.target().nodeClass() == NODE_CLASS_VARIABLETYPE)):
-          vn = r.target()
-          if (vn.dataType() != None):
-            variables.append(vn)
-        if (r.target().nodeClass() == NODE_CLASS_OBJECT):
-          print("+-Object" + toolBox_generator.getNodeCodeName(r.target()))
-          objects.append(r.target())
-        if(r.target().nodeClass() == NODE_CLASS_METHOD):
-          print("+-Method" + toolBox_generator.getNodeCodeName(r.target()))
-          methods.append(r.target())
-    ## create all files
-    # 
-    classname = toolBox_generator.getNodeCodeName(objectNode);
-    config = None
-    for serverConfig in self.serverHostList:
-      if serverConfig.name == classname:
-         config = serverConfig
-    cppfile = cppfile_generator(self.generatedNamspaceFileName, objectNode, config)
-    headerfile = headerfile_generator(self.namespace, objectNode, config)
-    
-    cppfile.generateImplementationFile(implementation, methods, variables, objects)
-    headerfile.generateHeaderFile(header, methods, variables, objects)    
-    
   def generateAll(self, outputPath):
-    for n in self.namespace.nodes:
+    for objectNode in self.namespace.nodes:
       # TODO: clientReflection classes
-      if n.nodeClass() == NODE_CLASS_OBJECTTYPE and not n in self.ignoredNodes:
-        name = toolBox_generator.getNodeCodeName(n)
-        print(name+".cpp, "+name+".hpp")
+      if objectNode.nodeClass() == NODE_CLASS_OBJECTTYPE and not objectNode in self.ignoredNodes:
+        classname = toolBox_generator.getNodeCodeName(objectNode)
+        print(classname+".cpp, " + classname+".hpp")
         cppPath = outputPath + "/serverReflection/"
         hppPath = cppPath
         if not os.path.exists(cppPath):
@@ -110,14 +77,66 @@ class cppClass_generator():
         if not os.path.exists(hppPath):
           os.makedirs(hppPath)    
           
-        #if os.path.isfile(cppPath + name + ".cpp"):
-        #  print("Datei " + cppPath + name + ".cpp existiert bereits")
-        codefile = open(cppPath + name + ".cpp", r"w+")
+        logger.debug("Generating ObjectType " + str(objectNode.id()) + " " + classname)
+        methods=[]
+        variables=[]
+        objects=[]
+        
+        for r in objectNode.getReferences():
+          if r.isForward() and r.target() != None:
+            if((r.target().nodeClass() == NODE_CLASS_VARIABLE or  r.target().nodeClass() == NODE_CLASS_VARIABLETYPE)):
+              vn = r.target()
+              if (vn.dataType() != None):
+                variables.append(vn)
+            if (r.target().nodeClass() == NODE_CLASS_OBJECT):
+              print("+-Object" + toolBox_generator.getNodeCodeName(r.target()))
+              objects.append(r.target())
+            if(r.target().nodeClass() == NODE_CLASS_METHOD):
+              print("+-Method" + toolBox_generator.getNodeCodeName(r.target()))
+              methods.append(r.target())
+        
+        ## create all files    
+        classname = toolBox_generator.getNodeCodeName(objectNode);
+        config = None
+        for serverConfig in self.serverHostList:
+          if serverConfig.name == classname:
+            config = serverConfig
+        cppfile = cppfile_generator(self.generatedNamspaceFileName, objectNode, config)
+        hppfile = headerfile_generator(self.namespace, objectNode, config)
+
+        '''
+        ' Check if file still exist.
+        ' If there is a "@generated" string in the first lines of code, the file can be reprinted
+        ' if not, the file was changed by an human or somethink like a human... hence we dont touch it with the generator
+        '''
+        if os.path.isfile(cppPath + classname + ".cpp"):
+          print("Datei " + cppPath + classname + ".cpp existiert bereits")
+          existingCodeFile = open(cppPath + classname + ".cpp")
+          for line in existingCodeFile:
+            if(string.find(line.rstrip(), "@generated") != -1) :
+              codefile = open(cppPath + classname + ".cpp", r"w+")
+              
+              cppfile.generateImplementationFile(codefile, methods, variables, objects)
+              codefile.close()  
+              break;
+          existingCodeFile.close()
           
-        #if os.path.isfile(hppPath + name + ".hpp"):
-        #  print("Datei " + hppPath + name + ".cpp existiert bereits")
-        headerfile = open(hppPath + name + ".hpp", r"w+")
+        else:
+          codefile = open(cppPath + classname + ".cpp", r"w+")
+          cppfile.generateImplementationFile(codefile, methods, variables, objects)
+          codefile.close()  
           
-        self.generateObject(n, (headerfile, codefile))
-        headerfile.close()
-        codefile.close()  
+        if os.path.isfile(hppPath + classname + ".hpp"):
+          print("Datei " + hppPath + classname + ".hpp existiert bereits")
+          existingCodeFile = open(hppPath + classname + ".hpp")
+          for line in existingCodeFile:
+            if(string.find(line.rstrip(), "@generated") != -1) :
+              headerfile = open(hppPath + classname + ".hpp", r"w+")
+              hppfile.generateHeaderFile(headerfile, methods, variables, objects) 
+              headerfile.close()  
+              break;
+          existingCodeFile.close()
+        else:
+          headerfile = open(hppPath + classname + ".hpp", r"w+")
+          hppfile.generateHeaderFile(headerfile, methods, variables, objects)   
+          headerfile.close()

@@ -62,6 +62,10 @@ class cppfile_generator():
   def generateImplementationFile(self, implementation, methodList, variableList, objectList):
     classname = toolBox_generator.getNodeCodeName(self.objectNode);
       
+    implementation.write("/*\n")
+    implementation.write("* @generated \n")
+    implementation.write("*/ \n\n")
+
     implementation.write("#include \"" + classname + ".hpp\"\n")
     implementation.write("extern \"C\" {\n")
     implementation.write(INDENT + "#include \"open62541.h\"\n")

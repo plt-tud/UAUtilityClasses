@@ -71,6 +71,10 @@ class headerfile_generator:
   def generateHeaderFile(self, header, methodList, variableList, objectList):
     classname = toolBox_generator.getNodeCodeName(self.objectNode);
         
+    header.write("/*\n")
+    header.write("* @generated \n")
+    header.write("*/ \n\n")
+    
     # Print Header Guards
     header.write("#ifndef HAVE_" + classname.capitalize() + "_H\n")
     header.write("#define HAVE_" + classname.capitalize() + "_H\n\n")
