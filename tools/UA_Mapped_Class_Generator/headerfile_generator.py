@@ -71,7 +71,7 @@ class headerfile_generator:
   def generateHeaderFile(self, header, methodList, variableList, objectList):
     classname = toolBox_generator.getNodeCodeName(self.objectNode);
         
-    header.write("/*\n")
+    header.write("/* This file has been automatically generated. Remove the subsequent line to prevent any automated changes to this file\n")
     header.write("* @generated \n")
     header.write("*/ \n\n")
     
@@ -148,7 +148,7 @@ class headerfile_generator:
   def generateHeaderMethods(self, header, methodList):     
     # Method header   
     for mn in methodList:
-      header.write("UA_StatusCode " + toolBox_generator.getNodeCodeName(mn) + "(size_t inputSize, const UA_Variant *input, size_t outputSize, UA_Variant *output);\n") 
+      header.write(INDENT + "UA_StatusCode " + toolBox_generator.getNodeCodeName(mn) + "(size_t inputSize, const UA_Variant *input, size_t outputSize, UA_Variant *output);\n") 
     
   def generateHeaderServerVariables(self, header, variableList):
     header.write(INDENT + "UA_ServerConfig server_config;\n")

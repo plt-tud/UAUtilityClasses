@@ -63,7 +63,59 @@ class cppClass_generator():
    
   def addIgnoredNodes(self, ignoredNodesList):
     self.ignoredNodes += ignoredNodesList    
+  
+  
+  def getMembersOfType(self, objectNode):
+    variables=[]
+    objects=[]
+    methods=[]
     
+    # Return a Triple of (varibales, objects, methods) for a given type definition
+    for r in objectNode.getReferences():
+      if r.isForward() and r.target() != None:
+        # FIXME: We are only checking hasProperty & hasComponent, but we should be checking any derived refType as well...
+        if((r.target().nodeClass() == NODE_CLASS_VARIABLE or r.target().nodeClass() == NODE_CLASS_VARIABLETYPE)) and \
+        (r.referenceType().id().ns == 0 and r.referenceType().id().i == 46 or 
+         r.referenceType().id().ns == 0 and r.referenceType().id().i == 47 ):
+          vn = r.target()
+          if (vn.dataType() != None):
+            print("+-Variable" + toolBox_generator.getNodeCodeName(r.target()))
+            # Only create encodable types!
+            if not "NonMappableType" in toolBox_generator.getCPPTypeByUAType(str(vn.dataType().target().browseName())):
+              variables.append(vn)
+            if not r.target() in self.ignoredNodes:
+              t = self.getMembersOfType(r.target())
+              variables += t[0]
+              objects += t[1]
+              methods += t[2]
+        # FIXME: We are only checking hasProperty & hasComponent, but we should be checking any derived refType as well...
+        if (r.target().nodeClass() == NODE_CLASS_OBJECT)  and \
+        (r.referenceType().id().ns == 0 and r.referenceType().id().i == 46 or 
+         r.referenceType().id().ns == 0 and r.referenceType().id().i == 47 ):
+          print("+-Object" + toolBox_generator.getNodeCodeName(r.target()))
+          if not r.target() in self.ignoredNodes:
+            print("-- contains -->" + toolBox_generator.getNodeCodeName(r.target()))
+            t = self.getMembersOfType(r.target())
+            variables += t[0]
+            objects += t[1]
+            methods += t[2]
+          objects.append(r.target())
+        if(r.target().nodeClass() == NODE_CLASS_METHOD)  and \
+        (r.referenceType().id().ns == 0 and r.referenceType().id().i == 46 or 
+         r.referenceType().id().ns == 0 and r.referenceType().id().i == 47 ):
+          print("+-Method" + toolBox_generator.getNodeCodeName(r.target()))
+          methods.append(r.target())
+      ## If this type inherits attributes from its parent, we need to add these to this objects list of variables/objects/methods
+      # FIXME: We are only checking hasSubtype, but we should be checking any derived refType as well...
+      if not r.isForward() and r.target() != None and r.referenceType().id().ns == 0 and r.referenceType().id().i == 45:
+        if not r.target() in self.ignoredNodes:
+          print("-- supertype -->" + toolBox_generator.getNodeCodeName(r.target()))
+          t = self.getMembersOfType(r.target())
+          variables += t[0]
+          objects += t[1]
+          methods += t[2]
+    return (variables,objects, methods)
+  
   def generateAll(self, outputPath):
     for objectNode in self.namespace.nodes:
       # TODO: clientReflection classes
@@ -81,19 +133,8 @@ class cppClass_generator():
         methods=[]
         variables=[]
         objects=[]
-        
-        for r in objectNode.getReferences():
-          if r.isForward() and r.target() != None:
-            if((r.target().nodeClass() == NODE_CLASS_VARIABLE or  r.target().nodeClass() == NODE_CLASS_VARIABLETYPE)):
-              vn = r.target()
-              if (vn.dataType() != None):
-                variables.append(vn)
-            if (r.target().nodeClass() == NODE_CLASS_OBJECT):
-              print("+-Object" + toolBox_generator.getNodeCodeName(r.target()))
-              objects.append(r.target())
-            if(r.target().nodeClass() == NODE_CLASS_METHOD):
-              print("+-Method" + toolBox_generator.getNodeCodeName(r.target()))
-              methods.append(r.target())
+        print("Discovering generatable subnodes")
+        (variables,objects, methods) = self.getMembersOfType(objectNode)
         
         ## create all files    
         classname = toolBox_generator.getNodeCodeName(objectNode);
@@ -110,15 +151,15 @@ class cppClass_generator():
         ' if not, the file was changed by an human or somethink like a human... hence we dont touch it with the generator
         '''
         if os.path.isfile(cppPath + classname + ".cpp"):
-          print("Datei " + cppPath + classname + ".cpp existiert bereits")
           existingCodeFile = open(cppPath + classname + ".cpp")
           for line in existingCodeFile:
             if(string.find(line.rstrip(), "@generated") != -1) :
               codefile = open(cppPath + classname + ".cpp", r"w+")
-              
               cppfile.generateImplementationFile(codefile, methods, variables, objects)
               codefile.close()  
               break;
+            else:
+              logger.warn(cppPath + classname + ".cpp has been modified (is missing the @generated comment). Skipping code generation for this class")
           existingCodeFile.close()
           
         else:
@@ -127,7 +168,6 @@ class cppClass_generator():
           codefile.close()  
           
         if os.path.isfile(hppPath + classname + ".hpp"):
-          print("Datei " + hppPath + classname + ".hpp existiert bereits")
           existingCodeFile = open(hppPath + classname + ".hpp")
           for line in existingCodeFile:
             if(string.find(line.rstrip(), "@generated") != -1) :
@@ -135,6 +175,8 @@ class cppClass_generator():
               hppfile.generateHeaderFile(headerfile, methods, variables, objects) 
               headerfile.close()  
               break;
+            else:
+              logger.warn(cppPath + classname + ".hpp has been modified (is missing the @generated comment). Skipping code generation for this class")
           existingCodeFile.close()
         else:
           headerfile = open(hppPath + classname + ".hpp", r"w+")
