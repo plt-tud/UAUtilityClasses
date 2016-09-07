@@ -7,3 +7,4 @@ install_manifest.txt
 CTestTestfile.cmake
 UAUtilityClasses.kdev4
 /.kdev4
+/build/

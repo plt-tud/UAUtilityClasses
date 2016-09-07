@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2016 <copyright holder> <email>
+ * Copyright (c) 2016 Chris Iatrou <Chris_Paul.Iatrou@tu-dresden.de>
+ * Chair for Process Systems Engineering
+ * Technical University of Dresden
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -159,15 +161,15 @@ static UA_StatusCode nodeIter(UA_NodeId childId, UA_Boolean isInverse, UA_NodeId
     if (thisChild != nullptr) {
         /* If max depth is reached, just abort */
         if (hhandle->depthLimit > 0 && hhandle->iterationDepth >= hhandle->depthLimit) {
-            return UA_STATUSCODE_GOOD;
+           return UA_STATUSCODE_GOOD;
         }
         /* Modify handle, then recurse */
-        hhandle->iterationDepth++;
         ua_remoteNode *oldParent = hhandle->parent;
         hhandle->parent = thisChild;
+        hhandle->iterationDepth++;
         UA_Client_forEachChildNodeCall(hhandle->client, childId, nodeIter, (void *) hhandle);
-        hhandle->parent = oldParent;
         hhandle->iterationDepth--;
+        hhandle->parent = oldParent;
     }
     
     return UA_STATUSCODE_GOOD;

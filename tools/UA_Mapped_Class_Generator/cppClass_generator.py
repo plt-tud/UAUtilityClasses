@@ -63,46 +63,65 @@ class cppClass_generator():
    
   def addIgnoredNodes(self, ignoredNodesList):
     self.ignoredNodes += ignoredNodesList    
-    
-  def generateObject(self, objectNode, targetfiles):
-    (header, implementation) = targetfiles
-    classname = toolBox_generator.getNodeCodeName(objectNode)
-    logger.debug("Generating ObjectType " + str(objectNode.id()) + " " + classname)
-    methods=[]
+  
+  
+  def getMembersOfType(self, objectNode):
     variables=[]
     objects=[]
+    methods=[]
     
+    # Return a Triple of (varibales, objects, methods) for a given type definition
     for r in objectNode.getReferences():
       if r.isForward() and r.target() != None:
-        if((r.target().nodeClass() == NODE_CLASS_VARIABLE or  r.target().nodeClass() == NODE_CLASS_VARIABLETYPE)):
+        # FIXME: We are only checking hasProperty & hasComponent, but we should be checking any derived refType as well...
+        if((r.target().nodeClass() == NODE_CLASS_VARIABLE or r.target().nodeClass() == NODE_CLASS_VARIABLETYPE)) and \
+        (r.referenceType().id().ns == 0 and r.referenceType().id().i == 46 or 
+         r.referenceType().id().ns == 0 and r.referenceType().id().i == 47 ):
           vn = r.target()
           if (vn.dataType() != None):
-            variables.append(vn)
-        if (r.target().nodeClass() == NODE_CLASS_OBJECT):
+            print("+-Variable" + toolBox_generator.getNodeCodeName(r.target()))
+            # Only create encodable types!
+            if not "NonMappableType" in toolBox_generator.getCPPTypeByUAType(str(vn.dataType().target().browseName())):
+              variables.append(vn)
+            if not r.target() in self.ignoredNodes:
+              t = self.getMembersOfType(r.target())
+              variables += t[0]
+              objects += t[1]
+              methods += t[2]
+        # FIXME: We are only checking hasProperty & hasComponent, but we should be checking any derived refType as well...
+        if (r.target().nodeClass() == NODE_CLASS_OBJECT)  and \
+        (r.referenceType().id().ns == 0 and r.referenceType().id().i == 46 or 
+         r.referenceType().id().ns == 0 and r.referenceType().id().i == 47 ):
           print("+-Object" + toolBox_generator.getNodeCodeName(r.target()))
+          if not r.target() in self.ignoredNodes:
+            print("-- contains -->" + toolBox_generator.getNodeCodeName(r.target()))
+            t = self.getMembersOfType(r.target())
+            variables += t[0]
+            objects += t[1]
+            methods += t[2]
           objects.append(r.target())
-        if(r.target().nodeClass() == NODE_CLASS_METHOD):
+        if(r.target().nodeClass() == NODE_CLASS_METHOD)  and \
+        (r.referenceType().id().ns == 0 and r.referenceType().id().i == 46 or 
+         r.referenceType().id().ns == 0 and r.referenceType().id().i == 47 ):
           print("+-Method" + toolBox_generator.getNodeCodeName(r.target()))
           methods.append(r.target())
-    ## create all files
-    # 
-    classname = toolBox_generator.getNodeCodeName(objectNode);
-    config = None
-    for serverConfig in self.serverHostList:
-      if serverConfig.name == classname:
-         config = serverConfig
-    cppfile = cppfile_generator(self.generatedNamspaceFileName, objectNode, config)
-    headerfile = headerfile_generator(self.namespace, objectNode, config)
-    
-    cppfile.generateImplementationFile(implementation, methods, variables, objects)
-    headerfile.generateHeaderFile(header, methods, variables, objects)    
-    
+      ## If this type inherits attributes from its parent, we need to add these to this objects list of variables/objects/methods
+      # FIXME: We are only checking hasSubtype, but we should be checking any derived refType as well...
+      if not r.isForward() and r.target() != None and r.referenceType().id().ns == 0 and r.referenceType().id().i == 45:
+        if not r.target() in self.ignoredNodes:
+          print("-- supertype -->" + toolBox_generator.getNodeCodeName(r.target()))
+          t = self.getMembersOfType(r.target())
+          variables += t[0]
+          objects += t[1]
+          methods += t[2]
+    return (variables,objects, methods)
+  
   def generateAll(self, outputPath):
-    for n in self.namespace.nodes:
+    for objectNode in self.namespace.nodes:
       # TODO: clientReflection classes
-      if n.nodeClass() == NODE_CLASS_OBJECTTYPE and not n in self.ignoredNodes:
-        name = toolBox_generator.getNodeCodeName(n)
-        print(name+".cpp, "+name+".hpp")
+      if objectNode.nodeClass() == NODE_CLASS_OBJECTTYPE and not objectNode in self.ignoredNodes:
+        classname = toolBox_generator.getNodeCodeName(objectNode)
+        print(classname+".cpp, " + classname+".hpp")
         cppPath = outputPath + "/serverReflection/"
         hppPath = cppPath
         if not os.path.exists(cppPath):
@@ -110,14 +129,56 @@ class cppClass_generator():
         if not os.path.exists(hppPath):
           os.makedirs(hppPath)    
           
-        #if os.path.isfile(cppPath + name + ".cpp"):
-        #  print("Datei " + cppPath + name + ".cpp existiert bereits")
-        codefile = open(cppPath + name + ".cpp", r"w+")
+        logger.debug("Generating ObjectType " + str(objectNode.id()) + " " + classname)
+        methods=[]
+        variables=[]
+        objects=[]
+        print("Discovering generatable subnodes")
+        (variables,objects, methods) = self.getMembersOfType(objectNode)
+        
+        ## create all files    
+        classname = toolBox_generator.getNodeCodeName(objectNode);
+        config = None
+        for serverConfig in self.serverHostList:
+          if serverConfig.name == classname:
+            config = serverConfig
+        cppfile = cppfile_generator(self.generatedNamspaceFileName, objectNode, config)
+        hppfile = headerfile_generator(self.namespace, objectNode, config)
+
+        '''
+        ' Check if file still exist.
+        ' If there is a "@generated" string in the first lines of code, the file can be reprinted
+        ' if not, the file was changed by an human or somethink like a human... hence we dont touch it with the generator
+        '''
+        if os.path.isfile(cppPath + classname + ".cpp"):
+          existingCodeFile = open(cppPath + classname + ".cpp")
+          for line in existingCodeFile:
+            if(string.find(line.rstrip(), "@generated") != -1) :
+              codefile = open(cppPath + classname + ".cpp", r"w+")
+              cppfile.generateImplementationFile(codefile, methods, variables, objects)
+              codefile.close()  
+              break;
+            else:
+              logger.warn(cppPath + classname + ".cpp has been modified (is missing the @generated comment). Skipping code generation for this class")
+          existingCodeFile.close()
           
-        #if os.path.isfile(hppPath + name + ".hpp"):
-        #  print("Datei " + hppPath + name + ".cpp existiert bereits")
-        headerfile = open(hppPath + name + ".hpp", r"w+")
+        else:
+          codefile = open(cppPath + classname + ".cpp", r"w+")
+          cppfile.generateImplementationFile(codefile, methods, variables, objects)
+          codefile.close()  
           
-        self.generateObject(n, (headerfile, codefile))
-        headerfile.close()
-        codefile.close()  
+        if os.path.isfile(hppPath + classname + ".hpp"):
+          existingCodeFile = open(hppPath + classname + ".hpp")
+          for line in existingCodeFile:
+            if(string.find(line.rstrip(), "@generated") != -1) :
+              headerfile = open(hppPath + classname + ".hpp", r"w+")
+              hppfile.generateHeaderFile(headerfile, methods, variables, objects) 
+              headerfile.close()  
+              break;
+            else:
+              logger.warn(cppPath + classname + ".hpp has been modified (is missing the @generated comment). Skipping code generation for this class")
+          existingCodeFile.close()
+        else:
+          headerfile = open(hppPath + classname + ".hpp", r"w+")
+          hppfile.generateHeaderFile(headerfile, methods, variables, objects)   
+          headerfile.close()

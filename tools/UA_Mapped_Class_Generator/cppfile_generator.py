@@ -62,6 +62,10 @@ class cppfile_generator():
   def generateImplementationFile(self, implementation, methodList, variableList, objectList):
     classname = toolBox_generator.getNodeCodeName(self.objectNode);
       
+    implementation.write("/* This file has been automatically generated. Remove the subsequent line to prevent any automated changes to this file\n")
+    implementation.write("* @generated \n")
+    implementation.write("*/ \n\n")
+
     implementation.write("#include \"" + classname + ".hpp\"\n")
     implementation.write("extern \"C\" {\n")
     implementation.write(INDENT + "#include \"open62541.h\"\n")
@@ -80,7 +84,7 @@ class cppfile_generator():
     self.generateDestructor(implementation, classname)
     self.generateVariable(implementation, variableList, classname)
     self.generateMethods(implementation, methodList, classname)
-    self.generateClassMapSelfToNS(implementation, classname, variableList, methodList)
+    self.generateClassMapSelfToNS(implementation, classname, variableList, methodList, objectList)
 
 
   def generateServerClass(self, implementation, methodList, variableList, objectList):
@@ -94,7 +98,7 @@ class cppfile_generator():
     implementation.write(INDENT + "this->constructserver(opcuaPort);\n")
     implementation.write("}\n\n")
       
-    ## Method "constructserver" (special ServerClass methode
+    ## Method "constructserver" (special ServerClass method)
     implementation.write("void "+classname+"::constructserver(uint16_t opcuaPort) {\n")
     implementation.write(INDENT + "this->server_config = UA_ServerConfig_standard;\n")
     implementation.write(INDENT + "this->server_nl = UA_ServerNetworkLayerTCP(UA_ConnectionConfig_standard, opcuaPort);\n")
@@ -102,12 +106,12 @@ class cppfile_generator():
     implementation.write(INDENT + "this->server_config.networkLayers = &this->server_nl;\n");
     implementation.write(INDENT + "this->server_config.networkLayersSize = 1;\n")
     
-    ## Suck -> fix values!!!!
-    ## FIXME
+    # FIXME: This should be taken from the config XML; 
     implementation.write(INDENT + "this->server_config.publishingIntervalLimits = { .min = 10.0, .max = 3600.0 * 1000.0 };\n")
     implementation.write(INDENT + "this->server_config.samplingIntervalLimits   = { .min = 10.0, .max = 24.0 * 3600.0 * 1000.0 };\n")
     
     implementation.write(INDENT + "this->mappedServer = UA_Server_new(this->server_config);\n")
+    # FIXME: This should be taken from the config XML; only yse UA_NS0ID_OBJECTSFOLDER as a fallback
     implementation.write(INDENT + "this->baseNodeId = UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER);\n")
     implementation.write(INDENT + "//MODEL_INITIALIZER_FUNCTION(this->mappedServer);\n")
     implementation.write(INDENT + self.generatedNamspaceFileName + "(this->mappedServer);\n");
@@ -165,18 +169,17 @@ class cppfile_generator():
       implementation.write(INDENT + INDENT + "return UA_STATUSCODE_BADINVALIDARGUMENT;\n")
       implementation.write(INDENT + "if (inputSize != 0)\n")
       implementation.write(INDENT + INDENT + "return UA_STATUSCODE_BADINVALIDARGUMENT;\n")
-      implementation.write(INDENT + "Do crazy shit and start methode... \n")
-      implementation.write(INDENT + "this->parentService->service_cmd_execute(\"run\");\n")
       implementation.write(INDENT + "return UA_STATUSCODE_GOOD;\n")
       implementation.write("}\n\n")  
             
         
     ## Methode "mapSelfToNamespace"
-  def generateClassMapSelfToNS(self, implementation, classname, variableList, methodList):
+  def generateClassMapSelfToNS(self, implementation, classname, variableList, methodList, objectList):
     ## Lastly, always add mapSelfToNamespace
     implementation.write("UA_StatusCode " + classname + "::mapSelfToNamespace() {\n")        
 
     # Create base node
+    implementation.write(INDENT + "/* Create Root Node */")
     implementation.write(INDENT + "UA_StatusCode retval = UA_STATUSCODE_GOOD;\n")
     implementation.write(INDENT + "UA_NodeId createdNodeId = UA_NODEID_NULL;\n")
     implementation.write("\n")      
@@ -191,32 +194,34 @@ class cppfile_generator():
     implementation.write(INDENT + "UA_INSTATIATIONCALLBACK(icb);\n")
     implementation.write(INDENT + "UA_Server_addObjectNode(this->mappedServer, UA_NODEID_NUMERIC(1,0),\n")
     implementation.write(INDENT + INDENT + INDENT + "UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER), UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),\n")
-    implementation.write(INDENT + INDENT + INDENT + "UA_QUALIFIEDNAME_ALLOC(1, this->name.c_str()), UA_NODEID_NUMERIC(" + str(self.objectNode.id().ns) + ", " + toolBox_generator.getNodeIdDefineString(self.objectNode) + "), oAttr, &icb, &createdNodeId);\n")
-    
-    
-    #Something like this should be printed
-    #implementation.write(INDENT + "UA_NodeId_copy(&createdNodeId, \"FIXME\");\n")
-    # really needed?
+    implementation.write(INDENT + INDENT + INDENT + "UA_QUALIFIEDNAME_ALLOC(1, this->name.c_str()), " + toolBox_generator.getNodeIdInitializer(self.objectNode) + ", oAttr, &icb, &createdNodeId);\n")
     implementation.write(INDENT + "UA_NodeId_copy(&createdNodeId, &this->rootNodeId);\n\n")
-    # Or like this...
-    # UA_NodeId_copy(nodePairList_getTargetIdBySourceId(this->ownedNodes, UA_NODEID_NUMERIC(IMMODULE_NSID, MODULE_TYPE_SIGNALIST_ID)), &this->SignalListId);
     
     # Map function calls
+    implementation.write(INDENT + "\n/* Contained Functions */\n")
     implementation.write(INDENT + "UA_FunctionCall_Map mapThis;\n")
     for mn in methodList:
-      implementation.write(INDENT + "mapThis.push_back((UA_FunctionCall_Map_Element) {.typeTemplateId = UA_NODEID_NUMERIC(\"FIXME_IMMODULE_NSID\", \"FIXME_COMMANDSET_61512_" + toolBox_generator.getNodeCodeName(mn) + "\"), .lookupTable = UA_CALLPROXY_TABLE(" + classname + ", " + toolBox_generator.getNodeCodeName(mn) + "), .callback = UA_CALLPROXY_NAME(" + classname + ", " + toolBox_generator.getNodeCodeName(mn) + ") }); \n")
+      implementation.write(INDENT + "mapThis.push_back((UA_FunctionCall_Map_Element) {.typeTemplateId = " + toolBox_generator.getNodeIdInitializer(mn) + ", .lookupTable = UA_CALLPROXY_TABLE(" + classname + ", " + toolBox_generator.getNodeCodeName(mn) + "), .callback = UA_CALLPROXY_NAME(" + classname + ", " + toolBox_generator.getNodeCodeName(mn) + ") }); \n")
   
     
+    implementation.write(INDENT + "\n/* Contained variables & Proxy mapping */\n")
     implementation.write(INDENT + "this->ua_mapFunctions(this, &mapThis, createdNodeId);\n\n")
     # Map DataSources
     implementation.write(INDENT + "UA_DataSource_Map mapDs;\n")
     # create for every var setter/getter proxys
     
     for vn in variableList:
-      implementation.write(INDENT + "mapDs.push_back((UA_DataSource_Map_Element) { .typeTemplateId = UA_NODEID_NUMERIC(" + str(vn.id().ns) + ", " + str(vn.id().i) + "), .read=UA_RDPROXY_NAME(" + classname + ", get_" + toolBox_generator.getNodeCodeName(vn) + "), .write=UA_WRPROXY_NAME(" + classname + ", set_" + toolBox_generator.getNodeCodeName(vn) + ")});\n")
+      implementation.write(INDENT + "mapDs.push_back((UA_DataSource_Map_Element) { .typeTemplateId =" + toolBox_generator.getNodeIdInitializer(vn) + ", .read=UA_RDPROXY_NAME(" + classname + ", get_" + toolBox_generator.getNodeCodeName(vn) + "), .write=UA_WRPROXY_NAME(" + classname + ", set_" + toolBox_generator.getNodeCodeName(vn) + ")});\n")
     
     implementation.write(INDENT + "ua_callProxy_mapDataSources(this->mappedServer, this->ownedNodes, &mapDs, (void *) this);\n")
     
+    implementation.write(INDENT + "\n/* Contained Objects */\n")
+    implementation.write(INDENT + "UA_NodeId *tmpNodeId;\n")
+    for on in objectList:
+      implementation.write(INDENT + "tmpNodeId = nodePairList_getTargetIdBySourceId(this->ownedNodes, " + toolBox_generator.getNodeIdInitializer(on) + ");\n")
+      implementation.write(INDENT + "if(tmpNodeId != nullptr)\n")
+      implementation.write(INDENT + INDENT + "UA_NodeId_copy( tmpNodeId, &this->" + toolBox_generator.getNodeCodeName(on) + ");\n")
+      
     implementation.write(INDENT + "return UA_STATUSCODE_GOOD;\n")
     implementation.write("}\n\n")
   

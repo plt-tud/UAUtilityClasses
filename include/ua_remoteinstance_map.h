@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2016 <copyright holder> <email>
+ * Copyright (c) 2016 Chris Iatrou <Chris_Paul.Iatrou@tu-dresden.de>
+ * Chair for Process Systems Engineering
+ * Technical University of Dresden
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -52,6 +54,7 @@ public:
     ua_remoteNode() {
         UA_NodeId_init(&this->nodeId);
         UA_NodeId_init(&this->typeDefinition);
+        UA_NodeId_copy(&UA_NODEID_NULL, &this->typeDefinition);
         this->nodeClass = UA_NODECLASS_UNSPECIFIED;
     };
     ~ua_remoteNode() {

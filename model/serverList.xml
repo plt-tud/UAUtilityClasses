@@ -1,10 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<serverClass>
-	<name>mtcaModule</name>
-	<name>ModuleType</name>
-</serverClass>
-
-<?xml version="1.0" encoding="UTF-8"?>
 <classannotations>
   <serverClass classname="mtcaModule">
     <!-- Future concept: Allow configuration of generation parameters like so: 

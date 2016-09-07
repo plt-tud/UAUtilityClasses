@@ -23,8 +23,11 @@ from logger import *
 
 def getNodeCodeName(objectNode):
     name = objectNode.browseName()
-    name = re.sub("^.+:","",name)
-    name = re.sub(" ","",name)
+    if len(objectNode.browseName().split(':')) > 1:
+      name = name.split(":")[-1]
+    re.sub("^[0-9]","",name)
+    for SYM in "^.+: <>()[]":
+      name=name.replace(SYM,"")
     return name
 
 def getCPPTypeByUAType(ua_typestring):
@@ -44,6 +47,8 @@ def getCPPTypeByUAType(ua_typestring):
     return "int8_t"
   elif ua_typestring.lower() == "datetime":
     return "time_t"
+  elif ua_typestring.lower() == "localizedtext":
+    return "std::tuple<std::string, std::string>"
   # FIXME: Lots of missing types here...
   else:
     return "NonMappableType_UAType_" + ua_typestring; 
@@ -59,6 +64,8 @@ def getProxyTypeByUAType(ua_typestring):
     return "DATETIME"
   elif ua_typestring.lower() in ["bool", "boolean"]:
     return "BOOL"
+  elif ua_typestring.lower() == "localizedtext":
+    return "LOCALIZEDTEXT"
   # FIXME: Lots of missing types here...
   else:
     return "NonMappableType_UAType_" + ua_typestring; 
@@ -105,4 +112,13 @@ def substitutePunctuationCharacters(input):
   return input.translate(string.maketrans(illegal, substitution), illegal)
 
 def getNodeIdInitializer(node):
-  pass
+  if node.id().i != None:
+      return "UA_NODEID_NUMERIC(" + str(node.id().ns) + ", " + str(node.id().i) + ")"
+  elif node.id().s != None:
+    return "UA_NODEID_STRING("  + str(node.id().ns) + ", " + node.id().s + ")"
+  elif node.id().b != None:
+    return ""
+  elif node.id().g != None:
+    return ""
+  return "NODEID_NUMERIC(1,0)"
+      
