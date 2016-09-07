@@ -166,12 +166,11 @@ uint32_t ipc_managed_object::doStart()
     return 0;
   }
 #endif
-  if(!this->isRunning())
-    this->workerThread_setup();
-  this->thread_run = true; 
+  this->thread_run = true;
+  this->workerThread_setup();
 #ifndef DISABLE_THREADING
   this->threadTask = new std::thread(ipc_managed_object_callWorker, this);
-  this->mtx_threadOperations.unlock();  
+  this->mtx_threadOperations.unlock();
 #endif
   return 0;
 }

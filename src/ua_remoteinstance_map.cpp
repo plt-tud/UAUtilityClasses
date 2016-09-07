@@ -29,7 +29,7 @@
 
 extern "C" {
   #include <unistd.h>
-  #include "open62541/open62541.h"
+  #include "open62541.h"
 }
 
 #include "logger.h"
@@ -173,29 +173,29 @@ static UA_StatusCode nodeIter(UA_NodeId childId, UA_Boolean isInverse, UA_NodeId
     return UA_STATUSCODE_GOOD;
 }
 
-int32_t mapRemoteSystemInstances(uint32_t mappingDepthLimit) {
-    
+int32_t ua_remoteInstance_map::mapRemoteSystemInstances(uint32_t mappingDepthLimit) {
+  UA_ClientState orgClientState;
+  if ((orgClientState = UA_Client_getState(this->client)) != UA_CLIENTSTATE_CONNECTED) {
+    LOG_DEBUG("Connecting client for mapping purposes...");
+    if (UA_Client_connect(this->client, this->targetUri.c_str()) != UA_STATUSCODE_GOOD) {
+      return -1;
+    }
+  }
+  
+  UA_NodeId nullId = UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER);
+  ua_iterator_handle iterhandle(this->client, &this->rootNode, this);
+  UA_Client_forEachChildNodeCall(this->client, nullId, nodeIter, (void *) &iterhandle);
+  
+  if (orgClientState != UA_CLIENTSTATE_CONNECTED) {
+    LOG_DEBUG("Disconnecting client from mapping purposes...");
+    UA_Client_disconnect(this->client);
+  }
+  return 0;
 }
 
 int32_t ua_remoteInstance_map::mapRemoteSystemInstances()
 {
-    UA_ClientState orgClientState;
-    if ((orgClientState = UA_Client_getState(this->client)) != UA_CLIENTSTATE_CONNECTED) {
-        LOG_DEBUG("Connecting client for mapping purposes...");
-        if (UA_Client_connect(this->client, this->targetUri.c_str()) != UA_STATUSCODE_GOOD) {
-            return -1;
-        }
-    }
-    
-    UA_NodeId nullId = UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER);
-    ua_iterator_handle iterhandle(this->client, &this->rootNode, this);
-    UA_Client_forEachChildNodeCall(this->client, nullId, nodeIter, (void *) &iterhandle);
-    
-    if (orgClientState != UA_CLIENTSTATE_CONNECTED) {
-        LOG_DEBUG("Disconnecting client from mapping purposes...");
-        UA_Client_disconnect(this->client);
-    }
-    return 0;
+    this->mapRemoteSystemInstances(0);
 }
 
 ua_remoteNode * ua_remoteInstance_map::findNodeByName(ua_remoteNode *node, std::string name) {

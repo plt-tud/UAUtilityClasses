@@ -64,7 +64,7 @@ void ipc_manager::periodiclyKickWorkerThread()
 void ipc_manager::workerThread_setup()   
 {
   #ifndef DISABLE_THREADING
-  this->lock = new std::unique_lock<std::mutex>(this->mtx_threadOperations);
+  this->lock = new std::unique_lock<std::mutex>(this->mtx_processEvent);
   this->kicker = new std::thread(call_periodiclyKickWorkerThread, this);
   #endif
 }
@@ -105,7 +105,7 @@ void ipc_manager::workerThread_cleanup()
 uint32_t ipc_manager::addObject(ipc_managed_object *object) 
 {
   #ifndef DISABLE_THREADING
-  std::unique_lock<std::mutex> lock(this->mtx_threadOperations);
+  std::unique_lock<std::mutex> lock(this->mtx_processEvent);
   #endif
   
   if (object==nullptr) return 0; //Used to kick the worker thread for shutdown;
@@ -151,7 +151,7 @@ uint32_t ipc_manager::getUniqueIpcId()
 
 uint32_t ipc_manager::addTask(ipc_task *task) {
   #ifndef DISABLE_THREADING
-  std::unique_lock<std::mutex> lock(this->mtx_threadOperations);
+  std::unique_lock<std::mutex> lock(this->mtx_processEvent);
   #endif
   
   if (task == NULL)

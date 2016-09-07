@@ -28,7 +28,7 @@
 #define UA_REMOTEINSTANCE_MAP_H
 
 extern "C" {
-  #include "open62541/open62541.h"
+  #include "open62541.h"
 }
 
 #include <string>
@@ -61,8 +61,6 @@ public:
     
     ua_remoteNode *getVariableByBrowseName(std::string name);
 };
-
-
 
 class ua_remoteInstance_map
 {

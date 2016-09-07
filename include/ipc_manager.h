@@ -45,6 +45,7 @@ private:
   uint32_t nxtId;
   std::condition_variable   notifier;
   std::unique_lock<std::mutex> *lock;
+  std::mutex  mtx_processEvent;
   std::thread *kicker;
   
   void workerThread_setup();
