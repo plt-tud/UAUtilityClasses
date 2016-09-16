@@ -42,7 +42,6 @@ ua_remoteInstance_map::ua_remoteInstance_map(std::string targetUri)
     this->targetUri = targetUri;
     this->rootNode.nodeClass = UA_NODECLASS_OBJECT;
     this->rootNode.nodeId = UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER);
-    this->rootNode.typeDefinition = UA_NODEID_NUMERIC(0, UA_NS0ID_FOLDERTYPE);
     this->rootNode.browseName  = "Objects";
     this->rootNode.displayName = "Objects";
     this->rootNode.description = "Objects";
@@ -54,7 +53,6 @@ ua_remoteInstance_map::ua_remoteInstance_map(std::string targetUri, UA_Client *c
     this->targetUri = targetUri;
     this->rootNode.nodeClass = UA_NODECLASS_OBJECT;
     this->rootNode.nodeId = UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER);
-    this->rootNode.typeDefinition = UA_NODEID_NUMERIC(0, UA_NS0ID_FOLDERTYPE);
     this->rootNode.browseName  = "Root";
     this->rootNode.displayName = "Root";
     this->rootNode.description = "Root";
@@ -148,17 +146,14 @@ static UA_StatusCode nodeIter(UA_NodeId childId, UA_Boolean isInverse, UA_NodeId
                 thisChild->nodeClass == UA_NODECLASS_REFERENCETYPE ||
                 thisChild->nodeClass == UA_NODECLASS_VARIABLETYPE) 
             {
-                if(UA_NodeId_equal(&hhandle->parent->typeDefinition , &UA_NODEID_NULL) == UA_STATUSCODE_GOOD)
-                    UA_NodeId_copy(&thisChild->nodeId, &hhandle->parent->typeDefinition);
+                hhandle->parent->typeDefinitions.push_back(thisChild);
             }
-            delete thisChild;
-            thisChild = nullptr;
     }
     
     UA_ReadResponse_deleteMembers(&rRes);
     UA_ReadRequest_delete(rReq);
     
-    if (thisChild != nullptr) {
+    if (thisChild != nullptr && (thisChild->nodeClass == UA_NODECLASS_OBJECT || thisChild->nodeClass == UA_NODECLASS_VARIABLE || thisChild->nodeClass == UA_NODECLASS_METHOD)) {
         /* If max depth is reached, just abort */
         if (hhandle->depthLimit > 0 && hhandle->iterationDepth >= hhandle->depthLimit) {
            return UA_STATUSCODE_GOOD;
@@ -238,7 +233,11 @@ void ua_remoteInstance_map::printNamespace(ua_remoteNode *node, uint32_t depth)
     else
         t="[?]";
     
-    cout << indent << "+ " + t + " " << node->browseName << endl ;
+    std::string typeDefs = "";
+    for (auto i : node->typeDefinitions)
+      typeDefs = typeDefs + " " + i->browseName;
+    
+    cout << indent << "+ " + t  << node->browseName << " [" + typeDefs + "] "<< endl ;
     for (auto n : node->objects) {
         this->printNamespace(n, depth+1);
     }

@@ -45,7 +45,7 @@ public:
     std::string  browseName;
     std::string  displayName;
     std::string  description;
-    UA_NodeId    typeDefinition;
+    std::list<ua_remoteNode *> typeDefinitions;
     
     std::list<ua_remoteNode *> variables;
     std::list<ua_remoteNode *> objects;
@@ -53,13 +53,10 @@ public:
     
     ua_remoteNode() {
         UA_NodeId_init(&this->nodeId);
-        UA_NodeId_init(&this->typeDefinition);
-        UA_NodeId_copy(&UA_NODEID_NULL, &this->typeDefinition);
         this->nodeClass = UA_NODECLASS_UNSPECIFIED;
     };
     ~ua_remoteNode() {
         UA_NodeId_deleteMembers(&this->nodeId);
-        UA_NodeId_deleteMembers(&this->typeDefinition);
     };
     
     ua_remoteNode *getVariableByBrowseName(std::string name);
