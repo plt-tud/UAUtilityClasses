@@ -111,14 +111,17 @@ def substitutePunctuationCharacters(input):
 
   return input.translate(string.maketrans(illegal, substitution), illegal)
 
-def getNodeIdInitializer(node):
-  if node.id().i != None:
-      return "UA_NODEID_NUMERIC(" + str(node.id().ns) + ", " + str(node.id().i) + ")"
-  elif node.id().s != None:
-    return "UA_NODEID_STRING("  + str(node.id().ns) + ", " + node.id().s + ")"
-  elif node.id().b != None:
+def getNodeIdInitializerFromNodeId(nodeId):
+  if nodeId.i != None:
+      return "UA_NODEID_NUMERIC(" + str(nodeId.ns) + ", " + str(nodeId.i) + ")"
+  elif nodeId.s != None:
+    return "UA_NODEID_STRING("  + str(nodeId.ns) + ", " + nodeId.s + ")"
+  elif nodeId.b != None:
     return ""
-  elif node.id().g != None:
+  elif nodeId.g != None:
     return ""
   return "NODEID_NUMERIC(1,0)"
+
+def getNodeIdInitializer(node):
+  return getNodeIdInitializerFromNodeId(node.id())
       

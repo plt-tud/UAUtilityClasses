@@ -118,11 +118,18 @@ if args.classannotations != None:
   if len(allAnnotations) > 0:
     for annotation in allAnnotations[0].getElementsByTagName('serverClass'):
       config = serverHostClassConfig(annotation.attributes['classname'].value)
+      if(len(annotation.getElementsByTagName("baseNodeId")) > 0 and annotation.getElementsByTagName("baseNodeId")[0].hasAttribute("nodeId")):
+        config.baseNodeId = annotation.getElementsByTagName("baseNodeId")[0].attributes["nodeId"].value
       serverHostList.append(config)
     for annotation in allAnnotations[0].getElementsByTagName('clientClass'):
       config = serverHostClassConfig(annotation.attributes['classname'].value)
       serverHostList.append(config)
-  
+    # See if there is a global baseNodeId for non-specified classes...
+    if(len(allAnnotations[0].getElementsByTagName("baseNodeId")) > 0 and allAnnotations[0].getElementsByTagName("baseNodeId")[0].hasAttribute("nodeId")):
+      for srv in serverHostList:
+        if srv.baseNodeId == None:
+          srv.baseNodeId = allAnnotations[0].getElementsByTagName("baseNodeId")[0].attributes["nodeId"].value
+
 # Clean up the XML files by removing duplicate namespaces and unwanted prefixes
 preProc = XMLPreprocessor()
 for xmlfile in args.infiles:

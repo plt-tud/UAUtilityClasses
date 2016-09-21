@@ -190,10 +190,15 @@ class cppfile_generator():
     implementation.write(INDENT + "UA_ObjectAttributes oAttr;\n")
     implementation.write(INDENT + "oAttr.displayName = UA_LOCALIZEDTEXT_ALLOC((char*)\"en_US\", this->name.c_str());\n")
     implementation.write(INDENT + "oAttr.description = UA_LOCALIZEDTEXT_ALLOC((char*)\"en_US\", this->name.c_str());\n")
-    implementation.write("\n")      
+    implementation.write("\n")
+    
     implementation.write(INDENT + "UA_INSTATIATIONCALLBACK(icb);\n")
     implementation.write(INDENT + "UA_Server_addObjectNode(this->mappedServer, UA_NODEID_NUMERIC(1,0),\n")
-    implementation.write(INDENT + INDENT + INDENT + "UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER), UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),\n")
+    if self.serverList != None and self.serverList.baseNodeId != None:
+      # BaseNodeId from config
+      implementation.write(INDENT + INDENT + INDENT + toolBox_generator.getNodeIdInitializerFromNodeId(self.serverList.baseNodeIdAsUAType()) +  ", UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),\n")
+    else:
+      implementation.write(INDENT + INDENT + INDENT + "UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER), UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),\n")
     implementation.write(INDENT + INDENT + INDENT + "UA_QUALIFIEDNAME_ALLOC(1, this->name.c_str()), " + toolBox_generator.getNodeIdInitializer(self.objectNode) + ", oAttr, &icb, &createdNodeId);\n")
     implementation.write(INDENT + "UA_NodeId_copy(&createdNodeId, &this->rootNodeId);\n\n")
     

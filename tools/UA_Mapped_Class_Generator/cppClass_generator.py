@@ -20,6 +20,7 @@ import logging
 from ua_constants import *
 import string
 from ua_namespace import opcua_namespace
+from ua_node_types import opcua_node_id_t
 import re
 import os
 from headerfile_generator import headerfile_generator
@@ -36,10 +37,18 @@ INDENT="    "
   
 class serverHostClassConfig():
   name = ""
+  baseNodeId = None
   
-  def __init__(self, name):
+  def __init__(self, name, baseNodeId = None):
     self.name = name
-
+    self.baseNodeId = baseNodeId 
+  
+  def baseNodeIdAsUAType(self):
+    if self.baseNodeId != None:
+      return opcua_node_id_t(self.baseNodeId)
+    else:
+      return None
+    
 class clientHostClassConfig():
   name = ""
   
@@ -82,7 +91,11 @@ class cppClass_generator():
             print("+-Variable" + toolBox_generator.getNodeCodeName(r.target()))
             # Only create encodable types!
             if not "NonMappableType" in toolBox_generator.getCPPTypeByUAType(str(vn.dataType().target().browseName())):
-              variables.append(vn)
+              vnames = []
+              for v in variables:
+                vnames.append(toolBox_generator.getNodeCodeName(v))
+              if not toolBox_generator.getNodeCodeName(r.target()) in vnames:
+                variables.append(vn)
             if not r.target() in self.ignoredNodes:
               t = self.getMembersOfType(r.target())
               variables += t[0]
@@ -99,7 +112,11 @@ class cppClass_generator():
             variables += t[0]
             objects += t[1]
             methods += t[2]
-          objects.append(r.target())
+          onames = []
+          for o in objects:
+            onames.append(toolBox_generator.getNodeCodeName(o))
+          if not toolBox_generator.getNodeCodeName(r.target()) in onames:
+            objects.append(r.target())
         if(r.target().nodeClass() == NODE_CLASS_METHOD)  and \
         (r.referenceType().id().ns == 0 and r.referenceType().id().i == 46 or 
          r.referenceType().id().ns == 0 and r.referenceType().id().i == 47 ):
