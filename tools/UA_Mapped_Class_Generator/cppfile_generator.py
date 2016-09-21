@@ -74,6 +74,7 @@ class cppfile_generator():
     implementation.write("#include \"ua_proxies.h\"\n")
     implementation.write("#include \"ua_proxies_callback.h\"\n")
     implementation.write("#include \"ua_proxies_typeconversion.h\"\n\n")
+    implementation.write("#include <tuple>\n")
     
     if  self.isServerClass(classname):
       self.generateServerClass(implementation, methodList, variableList, objectList)

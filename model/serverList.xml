@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classannotations>
   <serverClass classname="mtcaModule">
+    <!-- Set a special RootNodeId for this object -->
+    <baseNodeId name="ns=1;i=5001"/>
     <!-- Future concept: Allow configuration of generation parameters like so: 
     -->
     <publishingIntervalLimitMin>10.0</publishingIntervalLimitMin>
@@ -11,4 +13,6 @@
   </serverClass>
   <serverClass classname="ModuleType" />
   <clientClass classname="magicClientXY" />
+  <!-- Set a global baseNodeId for all server classes (unless overwritten) -->
+  <baseNodeId name="ns=1;i=5001"/>
 </classannotations>
