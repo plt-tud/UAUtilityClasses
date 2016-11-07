@@ -83,8 +83,8 @@ return UA_STATUSCODE_GOOD; } // End Fnct
 UA_StatusCode UA_RDPROXY_NAME(_p_class, _p_method) (void *handle, const UA_NodeId nodeid, UA_Boolean includeSourceTimeStamp, const UA_NumericRange *range, UA_DataValue *value) { \
 _p_class *thisObj = static_cast<_p_class *> (handle); \
 if (includeSourceTimeStamp) { \
-value->serverTimestamp = UA_DateTime_now(); \
-value->hasServerTimestamp = UA_TRUE; \
+value->sourceTimestamp = UA_DateTime_now(); \
+value->hasSourceTimestamp = UA_TRUE; \
 }
 
 #define UA_WRPROXY_HEAD(_p_class, _p_method)  \
