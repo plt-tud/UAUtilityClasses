@@ -88,3 +88,13 @@ UA_StatusCode ua_mapped_class::ua_mapDataSources(void* srcClass, UA_DataSource_M
 {
   return ua_callProxy_mapDataSources(this->mappedServer, this->ownedNodes, map, srcClass);
 }
+
+/** @brief For this methode you can set the sourceTimeStamp to the current system time or some other timeStamps (creation time etc) 
+ */
+UA_DateTime ua_mapped_class::getSourceTimeStamp() {
+	return this->sourceTimeStamp;	
+}
+
+void ua_mapped_class::setSourceTimeStamp(UA_DateTime sourceTimeStamp) {
+	this->sourceTimeStamp = sourceTimeStamp;	
+}

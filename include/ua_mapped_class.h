@@ -43,6 +43,7 @@ protected:
   UA_Client *mappedClient;
   nodePairList ownedNodes;
   UA_NodeId baseNodeId;
+	UA_DateTime sourceTimeStamp;
 
 public:
     ua_mapped_class(UA_Server *server, UA_NodeId *baseNodeId);
@@ -54,6 +55,9 @@ public:
     UA_StatusCode ua_unmapSelfFromNamespace();
     UA_StatusCode ua_mapFunctions(void* srcClass, UA_FunctionCall_Map *map, UA_NodeId objectId);
     UA_StatusCode ua_mapDataSources(void* srcClass, UA_DataSource_Map* map);
+		
+		virtual void setSourceTimeStamp(UA_DateTime sourceTimeStamp)=0;
+		virtual UA_DateTime getSourceTimeStamp()=0;
 };
 
 #endif // UA_MAPPED_CLASS_H
