@@ -167,32 +167,12 @@ UA_StatusCode ua_callProxy_mapDataSources(UA_Server* server, nodePairList instan
     ds.read = ele->read;
     ds.write = ele->write;
     ds.handle = srcClass;
+    // add individual description for every variable
+    UA_Server_writeDescription(server, instantiatedId, ele->description);
     delete ele; // inhibit memleak warning during static analysis
     
     retval |= UA_Server_setVariableNode_dataSource(server, (const UA_NodeId) instantiatedId, ds);
   }
   
   return retval;
-}
-
-template <class C, typename T, uint32_t UA_T>
-UA_StatusCode ua_valuesource_rdproxy(void *handle, const UA_NodeId nodeid, UA_Boolean includeSourceTimeStamp, 
-                                     const UA_NumericRange *range, UA_DataValue *value) 
-{
-  C *thisObj = static_cast<C *> (handle); 
-  if (includeSourceTimeStamp) { 
-    value->serverTimestamp = UA_DateTime_now(); 
-    value->hasServerTimestamp = UA_TRUE; 
-  } 
-  
-  T ua_val = thisObj->M(); 
-  UA_Variant_setScalarCopy(&value->value, &ua_val, &UA_TYPES[UA_T]); 
-  
-  value->hasValue = UA_TRUE; 
-  if (includeSourceTimeStamp) { 
-    value->sourceTimestamp = UA_DateTime_now(); 
-    value->hasSourceTimestamp = UA_TRUE; 
-  } 
-  
-  return UA_STATUSCODE_GOOD;
 }
