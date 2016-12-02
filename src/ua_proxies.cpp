@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2016 Chris Iatrou <Chris_Paul.Iatrou@tu-dresden.de>
+ * Copyright (c) 2016 
+ * Chris Iatrou <Chris_Paul.Iatrou@tu-dresden.de>
+ * Julian Rahm <Julian.Rahm@tu-dresden.de>
  * Chair for Process Systems Engineering
  * Technical University of Dresden
  * 
@@ -167,12 +169,65 @@ UA_StatusCode ua_callProxy_mapDataSources(UA_Server* server, nodePairList instan
     ds.read = ele->read;
     ds.write = ele->write;
     ds.handle = srcClass;
+	  
+    // Set accesslevel depending on callback functions
+    UA_Byte accessLevel;
+    if(ele->write == NULL && ele->read == NULL) {
+        accessLevel = 0;
+    }
+    if(ele->write != NULL && ele->read == NULL) {
+        accessLevel = UA_ACCESSLEVELMASK_WRITE;
+    }
+    if(ele->write != NULL && ele->read != NULL) {
+        accessLevel = UA_ACCESSLEVELMASK_WRITE^UA_ACCESSLEVELMASK_READ;
+    }
+    if(ele->write == NULL && ele->read != NULL) {
+        accessLevel = UA_ACCESSLEVELMASK_READ;
+    }
+    retval = UA_Server_writeAccessLevel(server, instantiatedId, accessLevel);
+    // There is currently no high- level function to do this. (02.12.2016)
+    retval = __UA_Server_write(server, &instantiatedId, UA_ATTRIBUTEID_USERACCESSLEVEL, &UA_TYPES[UA_TYPES_BYTE], &accessLevel);
     // add individual description for every variable
     UA_Server_writeDescription(server, instantiatedId, ele->description);
     delete ele; // inhibit memleak warning during static analysis
     
     retval |= UA_Server_setVariableNode_dataSource(server, (const UA_NodeId) instantiatedId, ds);
-  }
+	  
+    /* Set the right Value Datatype and ValueRank
+     * -> This is a quickfix for subjective data handling by open62541
+     * (02.12.2016)
+    */
+    UA_NodeId datatTypeNodeId = UA_NODEID_NULL;
+    retval = UA_Server_readDataType(server, instantiatedId, &datatTypeNodeId);
+        if(retval == UA_STATUSCODE_GOOD) {
+	    const UA_NodeId basedatatype = UA_NODEID_NUMERIC(0, UA_NS0ID_BASEDATATYPE);
+	    UA_Variant variantVal;
+	    UA_Variant_init(&variantVal);
+	    retval = UA_Server_readValue(server, instantiatedId, &variantVal);
+	    if(UA_NodeId_equal(&datatTypeNodeId, &basedatatype) && retval == UA_STATUSCODE_GOOD) {
+	        retval = UA_Server_writeDataType(server, instantiatedId, variantVal.type->typeId);
+		// See IEC 62541-3: OPC Unified Architecture - Part 3: Address space model -> Page 75
+                UA_Int32 valueRank = -2;	
+		if(variantVal.arrayDimensionsSize == 0 && UA_Variant_isScalar(&variantVal)) {
+		    // Scalar
+		    valueRank = -1;
+		}
+		else {
+		    if(variantVal.arrayDimensionsSize > 1) {
+		        // OneOrMoreDimensions
+		        valueRank = 0;
+		    }
+		    else {
+		        if(variantVal.arrayDimensionsSize == 1 || variantVal.arrayLength) {
+			    // OneDimension
+			    valueRank = 1;
+			}
+		    }
+		}
+		UA_Server_writeValueRank(server, instantiatedId, valueRank);
+	    }
+        }
+    }
   
   return retval;
 }
